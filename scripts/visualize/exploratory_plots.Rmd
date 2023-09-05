@@ -1,0 +1,166 @@
+---
+title: "Listening history exploration"
+author: "Brian Gural"
+date: "2023-09-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+
+```{r load libs}
+libs <- c("tidyverse", "patchwork", "lubridate", "RColorBrewer")
+lapply(libs, require, character.only = T)
+rm(libs)
+```
+
+
+```{r load data}
+df <- read.csv("data/raw/listen_history_1year.csv", row.names = 1)
+```
+```{r data cleaning}
+df <- df %>%
+  mutate(endTime = lubridate::ymd_hm(endTime),
+         endTime = lubridate::with_tz(endTime, tzone = "America/New_York"),
+         hour    = lubridate::hour(endTime),
+         hoursPlayed = msPlayed / 3600000)
+
+```
+## Plots
+
+You can also embed plots, for example:
+
+```{r basic visuals, echo=FALSE}
+# Get listening time by artist
+p.total.artist <- df %>%
+  group_by(artistName) %>%
+  summarise(total_ms = sum(msPlayed)) %>%
+  arrange(desc(total_ms)) %>%
+  head(10) %>%
+  ggplot(aes(x = reorder(artistName, total_ms), y = total_ms)) +
+  geom_col() +
+  coord_flip() +
+  xlab("Artist") +
+  ylab("Total Milliseconds Listened") +
+  ggtitle("Total Listening Time Per Artist")
+
+
+# Plot listening habits by time of day
+p.time.hourly <- df %>%
+  count(hour) %>%
+  ggplot(aes(x = hour, y = n)) +
+  geom_col() +
+  xlab("Hour of Day") +
+  ylab("Frequency") +
+  ggtitle("Listening Time by Time of Day")
+
+
+# Plot top tracks     
+p.top.tracks <- df %>%
+  count(trackName) %>%
+  arrange(desc(n)) %>%
+  head(10) %>%
+  ggplot(aes(x = reorder(trackName, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  xlab("Track") +
+  ylab("Frequency") +
+  ggtitle("Top 10 Most Listened Tracks")
+
+# Plot total listening time
+p.total.time <- df  %>%
+  arrange(endTime) %>%
+  mutate(cumulative_time = cumsum(as.numeric(hoursPlayed))) %>%
+  ggplot(aes(x = endTime, y = cumulative_time)) +
+  geom_line() +
+  xlab("Time") +
+  ylab("Cumulative Time Listened (hours)") +
+  ggtitle("Cumulative Listening Time Over Time")
+
+
+```
+
+```{r plot intro graphs, fig.width= 12, fig.height=8}
+design <- "AB
+           CD"
+wrap_plots(A = p.total.time, B = p.time.hourly, C = p.top.tracks, D = p.total.artist)
+```
+
+```{r plots 2, fig.width= 20, fig.height=10}
+
+# Step 1: Create a summary dataframe with total_hours for each artist_categorized and month
+df_summary <- df %>%
+  mutate(month_year = lubridate::floor_date(endTime, "month")) %>%
+  group_by(month_year, artistName) %>%
+  summarise(total_hours = sum(hoursPlayed), .groups = "drop") %>%
+  group_by(month_year) %>%
+  mutate(rank = row_number(-total_hours)) %>%
+  mutate(artist_categorized = if_else(rank <= 5, as.character(artistName), "Others")) %>%
+  group_by(month_year, artist_categorized) %>%
+  summarise(total_hours = sum(total_hours), .groups = "drop")
+
+# Step 2: Add back the rank information to the summary dataframe
+df_summary <- df_summary %>%
+  left_join(df %>% 
+              mutate(month_year = lubridate::floor_date(endTime, "month")) %>%
+              group_by(month_year, artistName) %>%
+              summarise(total_hours = sum(hoursPlayed), .groups = "drop") %>%
+              group_by(month_year) %>%
+              mutate(rank = row_number(-total_hours)) %>%
+              select(month_year, artistName, rank),
+            by = c("month_year", "artist_categorized" = "artistName"))
+
+df_summary[is.na(df_summary)] <- 6
+
+df_summary <- df_summary %>%
+  arrange(rank, increasing = T) %>%  # Sort by month and rank
+  mutate(artist_categorized = factor(artist_categorized, levels = unique(artist_categorized)))
+
+ggplot(df_summary, aes(x = month_year, y = total_hours, fill = artist_categorized, order = as.factor(rank))) +
+  geom_bar(stat="identity") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.border = element_rect(fill = NA, color = "black", size = 2),
+    panel.grid = element_blank()
+  ) +
+  ggtitle("Top 5 Artists by Listening Time Each Month")
+
+```
+```{r quarter density plots }
+
+# Calculate the rolling 3-day average listening time for each song
+df.rolling <- df %>%
+  mutate(date = lubridate::date(endTime),
+         quarter = lubridate::quarter(endTime)) %>%
+  arrange(date, trackName) %>%
+  group_by(trackName, quarter) %>%
+  mutate(rolling_avg = zoo::rollmean(msPlayed / 3600000, 3, align = "right", fill = NA)) %>%
+
+  # Identify the top 5 songs for each 3-month interval
+  group_by(quarter) %>%
+  summarise(avg_rolling_time = mean(rolling_avg, na.rm = TRUE), .groups = "drop") %>%
+  arrange(-avg_rolling_time) %>%
+  group_by(quarter) %>%
+  slice_head(n = 5) 
+
+  # Prepare for plotting
+  ggplot(aes(x = rolling_avg, fill = trackName)) +
+  geom_density(alpha = 0.6) +
+  facet_wrap(~quarter, scales = "free") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.border = element_rect(fill = NA, color = "black", size = 2),
+    panel.grid.minor = element_blank()
+  ) +
+  ggtitle("Top 5 Songs by 3-Day Rolling Average Listening Time Each Quarter")
+
+
+
+```
