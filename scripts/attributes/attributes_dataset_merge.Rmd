@@ -15,6 +15,12 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
+```{r load libs}
+# Load necessary libraries
+libs <- c("tidyverse")
+lapply(libs, require, character.only = T)
+```
+
 ```{r load data}
 lis.df <- read.csv("data/raw/listen_history_1year.csv", row.names = 1)
 
@@ -28,11 +34,15 @@ table(lis.df$trackName %in% att.df$trackName)
 ```
 
 ```{r subset to top}
+# Remove trailing white spaces
+lis.ws <- sapply(lis.df, function(x){trimws(x, "both")}) |> as.data.frame()
+att.ws <- sapply(att.df, function(x){trimws(x, "both")}) |> as.data.frame()
 
-lis.t <- lis.df |>
+
+lis.t <- lis.ws |>
          group_by(trackName) |>
-         summarise(min_played = sum(msPlayed/(1000*60))) |> 
+         summarise(min_played = sum(as.numeric(msPlayed)/(1000*60))) |> 
          arrange(desc(min_played)) %>%
-         head(500)
+         inner_join(distinct(att.ws), by = "trackName") 
 
 ```
