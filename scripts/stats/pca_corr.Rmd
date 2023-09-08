@@ -1,0 +1,108 @@
+---
+title: "Attributes and listening correlations"
+author: "Brian Gural"
+date: "2023-09-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load libs}
+# Load necessary libraries
+libs <- c("tidyverse", "gplots", "viridis")
+lapply(libs, require, character.only = T)
+```
+
+```{r load data}
+lis.df <- read.csv( "data/list_attr/bg_1y_t100.csv")
+```
+
+```{r subset to metrics}
+
+met.df <- lis.df |> 
+          dplyr::select(
+            track_name, min_played, artist_name, album_release_date, danceability, energy, key,
+            loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)
+```
+
+```{r plot heatmap, fig.width=12, fig.height=12}
+num.df <- met.df |> 
+  dplyr::select(-track_name, -artist_name, -album_release_date) 
+
+cor(num.df) |> 
+  gplots::heatmap.2(col = "viridis", margins = c(10,10), trace = "none") 
+
+```
+
+```{r pca of attr, , fig.width=12, fig.height=12}
+pca.df <- met.df |>  
+  mutate(track_artist = paste(track_name, artist_name, sep = "_")) |> 
+  group_by(track_artist) |> 
+  slice_head(n = 1) |> 
+  column_to_rownames("track_artist") |> 
+  dplyr::select(-album_release_date, -artist_name, -track_name, -mode)  %>%
+  ungroup() %>%
+  mutate(across(everything(), as.numeric))
+
+pca.out <- pca.df |> 
+           dplyr::select(-min_played) |> 
+           t() |> 
+           stats::prcomp() 
+
+summary(pca.out)
+
+pca.df <- pca.out$rotation |>
+          merge(pca.df, by = 0)
+
+
+```
+
+```{r plot pca, fig.width=12, fig.height=12}
+pca.df |> 
+    ggplot(aes(x = PC1, y = PC2, size = min_played, color = danceability)) +
+                  geom_point(alpha = 0.3) +
+                  labs(title = "PCA of music attributes") +
+                  theme(legend.position = "none") +
+                  theme_minimal()
+```
+
+```{r k means}
+
+# Extract the first N principal components
+N <- 2  # Choose how many PCs to use based on your specific analysis
+pca_scores <- pca.out$x[, 1:N] |> 
+
+# Perform k-means clustering
+k <-3  # Number of clusters
+kmeans_result <- kmeans(pca_scores, centers = k)
+
+# Add the k-means cluster assignments to your data
+clustered_data <- data.frame(pca_scores, cluster = factor(kmeans_result$cluster))
+
+```
+
+```{r hierarchical clustering}
+
+# Perform hierarchical clustering
+hc <- hclust(dist(pca_scores))
+plot(hc)  # To visualize the dendrogram
+
+# Cut the tree to get cluster assignments
+cut_height <- 100  # Choose based on dendrogram
+cluster_assignments <- cutree(hc, h = cut_height)
+
+# Add the hierarchical cluster assignments to your data
+clustered_data_hc <- data.frame(pca_scores, cluster = factor(cluster_assignments))
+```
+
+```{r plot hclust}
+
+ggplot(clustered_data, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_point() +
+  ggtitle("K-means Clustering on PCA-reduced Data")
+
+
+```

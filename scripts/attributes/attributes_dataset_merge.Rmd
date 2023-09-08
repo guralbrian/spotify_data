@@ -9,11 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r load libs}
 # Load necessary libraries
@@ -22,15 +17,15 @@ lapply(libs, require, character.only = T)
 ```
 
 ```{r load data}
+# Load listening data and match naming to attributes data
 lis.df <- read.csv("data/raw/listen_history_1year.csv", row.names = 1)
+colnames(lis.df)[2:3] <- c("artist_name", "track_name")
 
-att.df <- read.csv("data/raw/Spotify_Song_Attributes.csv")
+# Load attributes data for personal top 100 artists of the past year
+att.df <- read.csv("data/attributes/batched_slurm/art_ft_1_100.csv") 
 
-
-att.df$trackName %in% lis.df$trackName
-
-table(lis.df$trackName %in% att.df$trackName)
-
+# Check overlap of tracks in listening data and in attributes data
+table(lis.df$trackName %in% att.df$track_name)
 ```
 
 ```{r subset to top}
@@ -38,11 +33,17 @@ table(lis.df$trackName %in% att.df$trackName)
 lis.ws <- sapply(lis.df, function(x){trimws(x, "both")}) |> as.data.frame()
 att.ws <- sapply(att.df, function(x){trimws(x, "both")}) |> as.data.frame()
 
-
+# Make column for minutes played, total by track. Then join with attributes data
 lis.t <- lis.ws |>
-         group_by(trackName) |>
+         group_by(track_name) |>
          summarise(min_played = sum(as.numeric(msPlayed)/(1000*60))) |> 
          arrange(desc(min_played)) %>%
-         inner_join(distinct(att.ws), by = "trackName") 
+         inner_join(distinct(att.ws), by = "track_name") 
+
+```
+
+```{r save joined}
+
+write.csv(lis.t, "data/list_attr/bg_1y_t100.csv", row.names = F)
 
 ```
