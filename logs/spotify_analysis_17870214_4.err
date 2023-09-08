@@ -1,0 +1,16 @@
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.2     ✔ readr     2.1.3
+✔ forcats   0.5.2     ✔ stringr   1.5.0
+✔ ggplot2   3.4.0     ✔ tibble    3.2.1
+✔ lubridate 1.9.2     ✔ tidyr     1.3.0
+✔ purrr     1.0.1     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+Request failed [400]. Retrying in 1.9 seconds...
+Request failed [400]. Retrying in 3.2 seconds...
+Error in get_spotify_access_token() : 
+  Could not authenticate with given Spotify credentials:
+Invalid client
+Execution halted
