@@ -1,0 +1,20 @@
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.2     ✔ readr     2.1.3
+✔ forcats   0.5.2     ✔ stringr   1.5.0
+✔ ggplot2   3.4.0     ✔ tibble    3.2.1
+✔ lubridate 1.9.2     ✔ tidyr     1.3.0
+✔ purrr     1.0.1     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+Selecting by min_played
+[1] "1: Federico Albanese"
+[1] "2: Noah Cyrus"
+[1] "3: pluko"
+[1] "5: Young Fathers"
+[1] "6: Amber Mark"
+[1] "7: Cuco"
+[1] "8: The xx"
+[1] "9: Louis Armstrong"
+[1] "10: SZA"

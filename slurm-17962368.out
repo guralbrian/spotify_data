@@ -9,20 +9,11 @@
 ✖ dplyr::lag()    masks stats::lag()
 ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 Selecting by min_played
-[1] "1: Dominic Fike"
-[1] "2: Conro"
-[1] "4: The Happy Fits"
-[1] "5: NEIL FRANCES"
-[1] "6: Lake Street Dive"
-[1] "7: Arctic Monkeys"
-[1] "8: half•alive"
-[1] "9: Damian Ukeje"
-[1] "10: Dreamville"
-[1] "11: Oliver Tree"
-[1] "12: Mumford & Sons"
-[1] "13: Junior Boys"
-[1] "14: Up First"
-[1] "15: Sure Sure"
-[1] "16: Bon Iver"
-[1] "18: JAY-Z"
-[1] "20: Adele"
+[1] "1: Federico Albanese"
+[1] "2: Noah Cyrus"
+[1] "3: pluko"
+[1] "5: Young Fathers"
+[1] "6: Amber Mark"
+[1] "7: Cuco"
+[1] "8: The xx"
+Request failed [429]. Retrying in 66077 seconds...

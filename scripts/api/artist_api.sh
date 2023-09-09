@@ -25,8 +25,8 @@ client_id=$1
 client_secret=$2
 
 # Calculate start and end index for each array job
-start_index=1
-end_index=3600
+start_index=501
+end_index=1000
 
 module load r r/4.2.1
 
