@@ -1,43 +1,59 @@
 ---
-title: "Attributes and listening correlations"
+title: "Attributes and Listening Correlations"
 author: "Brian Gural"
 date: "2023-09-08"
-output: html_document
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    theme: united
+runtime: shiny
 ---
 
-```{r setup, include=FALSE}
+# Setup
+``` {r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Introduction
+This document explores the relationship between various song attributes accessed from the Spotify API and my personal listening data for the top 100 artists of the past year.
 
-```{r load libs}
-# Load necessary libraries
-libs <- c("tidyverse", "gplots", "viridis", "factoextra", "ggiraphExtra")
+# Load Libraries
+``` {r load libs, return = F}
+libs <- c("tidyverse", "gplots", "viridis", "factoextra", "ggiraphExtra", "shiny", "DT")
 lapply(libs, require, character.only = T)
 ```
 
-```{r load data}
-lis.df <- read.csv( "data/list_attr/bg_1y_t100.csv")
+# Load Data
+``` {r load data}
+#lis.df <- read.csv("data/list_attr/bg_1y_t100.csv") # for non-shiny paths
+lis.df <- read.csv("bg_1y_t100.csv")
 ```
 
-```{r subset to metrics}
+# Data Preprocessing
+Here, we subset the data to keep only the metrics we are interested in for our analysis.
 
+``` {r subset to metrics}
 met.df <- lis.df |> 
           dplyr::select(
             track_name, min_played, artist_name, album_release_date, danceability, energy, key,
             loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)
 ```
 
-```{r plot heatmap, fig.width=12, fig.height=12}
+# Correlation Heatmap
+``` {r plot heatmap, fig.width=12, fig.height=12}
 num.df <- met.df |> 
   dplyr::select(-track_name, -artist_name, -album_release_date) 
 
 cor(num.df) |> 
   gplots::heatmap.2(col = "viridis", margins = c(10,10), trace = "none") 
-
 ```
 
-```{r pca of attr, , fig.width=12, fig.height=12}
+# Principal Component Analysis (PCA)
+We perform PCA to reduce the dimensionality of our data and to identify the principal components that capture the most variance in the data.
+
+``` {r pca of attr, fig.width=12, fig.height=12}
 pca.df <- met.df |>  
   mutate(track_artist = paste(track_name, artist_name, sep = "_")) |> 
   group_by(track_artist) |> 
@@ -56,25 +72,43 @@ summary(pca.out)
 
 pca.out <- pca.out$rotation |>
           merge(pca.df, by = 0)
-
-
 ```
 
-```{r plot pca, fig.width=12, fig.height=12}
-top.tracks <- 
-
-pca.df |> 
+# PCA Plot
+``` {r plot pca, fig.width=12, fig.height=12}
+top.tracks <-  pca.out |> 
     ggplot(aes(x = PC1, y = PC2, size = min_played, color = danceability)) +
                   geom_point(alpha = 0.3) +
-                  labs(title = "PCA of music attributes") +
+                  labs(title = "PCA of music attributes, colored by danceability") +
                   theme(legend.position = "none") +
                   theme_minimal()
+
+top.tracks
 ```
 
 
+# Interactive PCA Plot
+In this section, you can choose the feature by which the points in the PCA plot will be colored.
 
-```{r yahma_yhmn model fit}
+``` {r shiny input, echo=FALSE}
+shiny::selectInput("color_by", "Color points by:", choices = colnames(pca.df))
+```
 
+``` {r shiny plot, echo=FALSE}
+renderPlot({
+  ggplot(pca.out, aes_string(x = "PC1", y = "PC2", color = input$color_by)) +
+    geom_point(alpha = 0.3) +
+    labs(title = "PCA of music attributes") +
+    theme(legend.position = "none") +
+    theme_minimal()
+})
+```
+
+
+# Model Fitting for Clustering
+We scale the data and use the silhouette method to find the optimal number of clusters for k-means clustering.
+
+``` {r yahma_yhmn model fit}
 # Scale the data
 
 scaled.df <- pca.df |> 
@@ -87,10 +121,10 @@ fviz_nbclust(x = scaled.df,
              method = 'silhouette')
 
 # its 2
-
 ```
 
-```{r yahma kmeans}
+# K-means Clustering
+``` {r yahma kmeans}
 scaled.km <- kmeans(x = scaled.df, centers = 3)
 
 # Num of songs in each cluster
@@ -113,20 +147,20 @@ ggiraphExtra::ggRadar(
   mapping = aes(colours = cluster),
   interactive = T
 )
-
 ```
-```{r cluster details}
+
+# Cluster Details
+``` {r cluster details}
 pca.df |> 
   rownames_to_column(var = "track_artist") |> 
   arrange(desc(min_played)) |> 
   group_by(cluster) |> 
   slice_head(n=3) 
-
-
-  arrange(cyl, desc(mpg)) %>%
-  group_by(cyl) %>%
-  slice_head(n=3) %>%
-  select(car, cyl, mpg, disp, hp)
-
-
 ```
+
+
+
+# Further Analysis and Suggestions
+1. You could look into how different genres are distributed across clusters.
+2. Consider analyzing how song attributes correlate with other personal metrics like time of day or day of the week.
+3. You might want to explore how song attributes have changed over time for your top artists.

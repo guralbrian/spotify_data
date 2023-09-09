@@ -24,8 +24,13 @@ colnames(lis.df)[2:3] <- c("artist_name", "track_name")
 # Load attributes data for personal top 100 artists of the past year
 att.df <- read.csv("data/attributes/batched_slurm/art_ft_1_100.csv") 
 
+att.df.101 <- read.csv("data/attributes/batched_slurm/art_ft_101_500.csv") 
+
+att.df <- rbind(att.df, att.df.101)
+
+write.csv(att.df, "data/attributes/batched_slurm/art_ft_1_500.csv") 
 # Check overlap of tracks in listening data and in attributes data
-table(lis.df$trackName %in% att.df$track_name)
+table(lis.df$track_name %in% att.df$track_name)
 ```
 
 ```{r subset to top}

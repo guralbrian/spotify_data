@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p general
 #SBATCH -N 1
-#SBATCH -t 4:00:00
+#SBATCH -t 8:00:00
 #SBATCH --mem=8g
 #SBATCH -n 1
 
@@ -25,8 +25,8 @@ client_id=$1
 client_secret=$2
 
 # Calculate start and end index for each array job
-start_index=101
-end_index=500
+start_index=1
+end_index=3600
 
 module load r r/4.2.1
 
