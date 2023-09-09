@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r load libs, results = 'hide', include=F}
+#devtools::install_github("nsgrantham/ggdark")
 libs <- c("tidyverse", "gplots", "viridis", "factoextra", "shiny", "DT", "magrittr", "dplyr")
 lapply(libs, require, character.only = T)
 ```
@@ -17,16 +18,122 @@ lapply(libs, require, character.only = T)
 ```{r load data, include=F}
 #lis.df <- read.csv("data/list_attr/bg_1y_t100.csv") # for non-shiny paths
 lis.df <- read.csv("data/list_attr/bg_1y_t500.csv")
-def.attr <- read.csv("attribute_definitions.csv")
-temp.df <- read.csv("data/raw/listen_history_1year.csv")
+def.attr <- read.csv("data/attributes/attribute_definitions.csv")
+temp.df <- read.csv("data/raw/listen_history_1year.csv", row.names = 1)
 ```
 
-## Including Plots
+```{r format times}
 
-You can also embed plots, for example:
+# Convert endTime to POSIXct
+temp.df$endTime <- as.POSIXct(temp.df$endTime, format="%Y-%m-%d %H:%M")
+  
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+# Merge temp.df and lis.df based on trackName and artistName
+merged.df <- inner_join(temp.df, lis.df, by = c("trackName" = "track_name", "artistName" = "artist_name"))
+
+# Calculate metrics
+final.df <- merged.df %>%
+  mutate(
+    percent_played = (msPlayed / duration_ms) * 100,
+    skipped = ifelse(percent_played < 50, "Yes", "No"),
+    day_of_week = weekdays(endTime),
+    weekday_or_weekend = case_when(
+      day_of_week %in% c("Saturday", "Sunday") ~ "Weekend",
+      TRUE ~ "Weekday"
+    ),
+    period_of_day = case_when(
+      hour(endTime) >= 6 & hour(endTime) < 12 ~ "Morning",
+      hour(endTime) >= 12 & hour(endTime) < 18 ~ "Afternoon",
+      hour(endTime) >= 18 & hour(endTime) < 24 ~ "Evening",
+      TRUE ~ "Night"
+    )
+  )
+
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r plot heatmap, fig.width=20, fig.height=8}
+# Assuming final.df has a 'date' column in YYYY-MM-DD format
+final.df <- final.df %>%
+  mutate(endTime = ymd_hms(endTime, tz = "UTC") %>% with_tz("America/New_York"))
+
+final.df <- final.df %>%
+  mutate(year = year(endTime),
+         month = month(endTime, label=TRUE),
+         day = day(endTime),
+         hour = hour(endTime))
+
+# Create a summary data frame to plot
+plot_df <- final.df %>%
+  group_by(year, month, day, hour) %>%
+  summarise(min_listened = sum(msPlayed)/(60*1000)) %>%
+  ungroup()
+
+p <- ggplot(plot_df, aes(x = day, y = hour, fill = min_listened)) +
+  geom_tile(color = "white", size = 0.1) +
+  scale_fill_viridis(name = "Minutes Played", option = "C") +
+  facet_wrap(year ~ month, nrow = 1, labeller = label_wrap_gen(multi_line=FALSE)) +
+  scale_y_continuous(trans = "reverse", breaks = c(0, 6, 12, 18,24)) +
+  scale_x_continuous(breaks = c(15,30)) +
+  theme_minimal(base_size = 8) +
+  labs(title = "Hourly minutes played", x = "Day", y = "Hour Commencing") +
+  theme(legend.position = "bottom",
+        panel.spacing = unit(0, "lines"),
+        plot.title = element_text(size = 14),
+        axis.text.y = element_text(size = 6),
+        strip.background = element_rect(colour = "white"),
+        axis.ticks = element_blank(),
+        axis.text = element_text(size = 7),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 6),
+        panel.grid.minor = element_blank(),
+        axis.ticks.x = element_blank())
+
+
+p + dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 14) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        panel.spacing = unit(0, "lines"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position="bottom")
+
+```
+
+```{r day of week over time prep}
+
+temp.df <- temp.df %>%
+  mutate(endTime = ymd_hms(endTime, tz = "UTC") %>% with_tz("America/New_York"))
+temp.df$time_of_day <- lubridate::hour(temp.df$endTime) + lubridate::minute(temp.df$endTime) / 60
+temp.df$day_of_week <- weekdays(temp.df$endTime)
+
+
+temp.df$day_of_week <- factor(temp.df$day_of_week, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+
+
+```
+
+```{r day of week plot, fig.width=7, fig.height=10}
+
+ggplot(temp.df, aes(x = time_of_day, fill = day_of_week)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_x_continuous(breaks = c(0,6,12,18,24)) +
+  facet_wrap(~ day_of_week, scales = "free", ncol = 1) +
+  labs(title = "Density of Listening Time Across Different Days of the Week",
+       x = NULL, 
+       y = NULL) +
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position = "none"
+  )
+
+```
