@@ -1,8 +1,16 @@
 library('spotifyr')
 library('tidyverse')
 
-Sys.setenv(SPOTIFY_CLIENT_ID = 'c754a384dab5409faec10df188bbe142')
-Sys.setenv(SPOTIFY_CLIENT_SECRET = 'd69521cc39664c59a85ed16f18aeae41')
+# Get command line arguments
+args <- commandArgs(trailingOnly = TRUE)
+start_index <- as.integer(args[1])
+end_index <- as.integer(args[2])
+client_id <- args[3]
+client_secret <- args[4]
+
+# Set Spotify credentials
+Sys.setenv(SPOTIFY_CLIENT_ID = client_id)
+Sys.setenv(SPOTIFY_CLIENT_SECRET = client_secret)
 
 access_token <- get_spotify_access_token()
 
@@ -15,11 +23,6 @@ art.top <- lis.his |>
   arrange(desc(min_played)) |> 
   top_n(3600) |> 
   pull(artistName)
-
-# Get command line arguments for the range of artists to process
-args <- commandArgs(trailingOnly = TRUE)
-start_index <- as.integer(args[1])
-end_index <- as.integer(args[2])
 
 # Subset the artists based on the range
 art.subset <- art.top[start_index:end_index]
