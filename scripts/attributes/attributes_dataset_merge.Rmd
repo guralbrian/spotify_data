@@ -49,6 +49,6 @@ lis.t <- lis.ws |>
 
 ```{r save joined}
 
-write.csv(lis.t, "data/list_attr/bg_1y_t100.csv", row.names = F)
+write.csv(lis.t, "data/merged_datasets/bg_1y_t500.csv", row.names = F)
 
 ```

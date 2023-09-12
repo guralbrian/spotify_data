@@ -50,3 +50,6 @@ rsconnect/
 
 # CSV files
 *.csv
+
+# No json files
+*.json

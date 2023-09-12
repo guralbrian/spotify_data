@@ -17,7 +17,7 @@ lapply(libs, require, character.only = T)
 
 ```{r load data, include=F}
 #lis.df <- read.csv("data/list_attr/bg_1y_t100.csv") # for non-shiny paths
-lis.df <- read.csv("data/list_attr/bg_1y_t500.csv")
+lis.df <- read.csv("data/merged_datasets/bg_1y_t500.csv")
 def.attr <- read.csv("data/attributes/attribute_definitions.csv")
 temp.df <- read.csv("data/raw/listen_history_1year.csv", row.names = 1)
 ```
@@ -53,7 +53,7 @@ final.df <- merged.df %>%
 ```
 
 
-```{r plot heatmap, fig.width=20, fig.height=8}
+```{r plot heatmap, fig.width=20, fig.height=6}
 # Assuming final.df has a 'date' column in YYYY-MM-DD format
 final.df <- final.df %>%
   mutate(endTime = ymd_hms(endTime, tz = "UTC") %>% with_tz("America/New_York"))
@@ -62,16 +62,17 @@ final.df <- final.df %>%
   mutate(year = year(endTime),
          month = month(endTime, label=TRUE),
          day = day(endTime),
-         hour = hour(endTime))
+         hour = hour(endTime)
+         )
 
 # Create a summary data frame to plot
 plot_df <- final.df %>%
-  group_by(year, month, day, hour) %>%
+  group_by(year, month, day, hour, period_of_day) %>%
   summarise(min_listened = sum(msPlayed)/(60*1000)) %>%
   ungroup()
 
 p <- ggplot(plot_df, aes(x = day, y = hour, fill = min_listened)) +
-  geom_tile(color = "white", size = 0.1) +
+  geom_tile(size = 0.1) +
   scale_fill_viridis(name = "Minutes Played", option = "C") +
   facet_wrap(year ~ month, nrow = 1, labeller = label_wrap_gen(multi_line=FALSE)) +
   scale_y_continuous(trans = "reverse", breaks = c(0, 6, 12, 18,24)) +
@@ -123,8 +124,12 @@ temp.df$day_of_week <- factor(temp.df$day_of_week, levels = c("Sunday", "Monday"
 ggplot(temp.df, aes(x = time_of_day, fill = day_of_week)) +
   geom_density(alpha = 0.5) +
   scale_fill_brewer(palette = "Dark2") +
-  scale_x_continuous(breaks = c(0,6,12,18,24)) +
-  facet_wrap(~ day_of_week, scales = "free", ncol = 1) +
+  scale_x_continuous(breaks = c(0,6,12,18,24),
+                     limits = c(0,24)) +
+  scale_y_continuous(breaks = c(0,0.05,0.1,0.15),
+                     limits = c(0,0.15)) +
+  facet_wrap(~ day_of_week, scales = "free", ncol = 1,
+             strip.position = "right") +
   labs(title = "Density of Listening Time Across Different Days of the Week",
        x = NULL, 
        y = NULL) +
@@ -133,7 +138,9 @@ ggplot(temp.df, aes(x = time_of_day, fill = day_of_week)) +
     strip.background = element_blank(),
     axis.title = element_blank(),
     axis.ticks = element_blank(),
-    legend.position = "none"
+    legend.position = "none",
+    panel.grid.minor = element_blank()
   )
+
 
 ```
