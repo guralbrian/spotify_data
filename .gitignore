@@ -53,3 +53,7 @@ rsconnect/
 
 # No json files
 *.json
+
+
+# no data folders
+data/raw/individuals

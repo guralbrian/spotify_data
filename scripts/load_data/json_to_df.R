@@ -4,8 +4,9 @@
 library("rjson")
 library("tidyverse")
 
+person <- "ammi"
 # List all files that match the pattern "StreamingHistory*.json" in the folder
-files_to_load <- list.files("data/raw/individuals/bgural/", pattern = "StreamingHistory.*\\.json$", full.names = TRUE)
+files_to_load <- list.files(paste0("data/raw/individuals/", person), pattern = "StreamingHistory.*\\.json$", full.names = TRUE)
 
 # Load and merge them into a single tibble
 merged_df <- files_to_load %>%
@@ -14,7 +15,7 @@ merged_df <- files_to_load %>%
   as_tibble()
 
 # Save the data
-write.csv(merged_df, "data/raw/individuals/bgural/listen_history_1year.csv")
+write.csv(merged_df, paste0("data/raw/individuals/", person, "/listen_history_1year.csv"))
 
 
 

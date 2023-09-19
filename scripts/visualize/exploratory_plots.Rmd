@@ -21,7 +21,7 @@ rm(libs)
 
 
 ```{r load data}
-df <- read.csv("data/raw/individuals/bgural/listen_history_1year.csv", row.names = 1)
+df <- read.csv("data/raw/individuals/ammi/listen_history_1year.csv", row.names = 1)
 ```
 ```{r data cleaning}
 df <- df %>%
@@ -133,9 +133,12 @@ p.yearly.artists <- yearly.artists |>
 
 ```{r plot intro graphs, fig.width= 14, fig.height=8}
 design <- "DEG" 
-wrap_plots( 
+w.artist <- wrap_plots( 
            D = p.total.artist,
            E = p.daily.artists, G = p.yearly.artists, design = design)
+
+w.artist + plot_annotation(title = "Ammi's Top Artists",
+                           theme = theme(plot.title = element_text(size = 25)))
 ```
 ```{r basic visuals, echo=FALSE}
 
@@ -203,9 +206,18 @@ p.time.monthly <- df %>%
 ```{r plot intro graphs, fig.width= 14, fig.height=8}
 design <- "CB
            CA" 
-wrap_plots(A = p.time.monthly,  B = p.time.hourly, 
+w.person <- wrap_plots(A = p.time.monthly,  B = p.time.hourly, 
            C = p.top.tracks,     
            E = p.daily.artists, G = p.yearly.artists, design = design)
+
+w.person + plot_annotation(title = "Ammi's favorite music and listening times",
+                           theme = theme(plot.title = element_text(size = 25)))
 ```
+```{r plot intro graphs, fig.width= 14, fig.height=8}
+
+w.artist + plot_annotation(title = "Ammi's Top Artists",
+                           theme = theme(plot.title = element_text(size = 25)))
+```
+
 
 
