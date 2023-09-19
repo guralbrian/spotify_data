@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load libs, results = 'hide', include=F}
 #devtools::install_github("nsgrantham/ggdark")
 libs <- c("tidyverse", "gplots", "viridis", "factoextra", "shiny", "DT", "magrittr", "dplyr",
-          "ggdark")
+          "ggdark", "pals")
 lapply(libs, require, character.only = T)
 ```
 
@@ -20,7 +20,7 @@ lapply(libs, require, character.only = T)
 #lis.df <- read.csv("data/list_attr/bg_1y_t100.csv") # for non-shiny paths
 lis.df <- read.csv("data/merged_datasets/bg_1y_t500.csv")
 def.attr <- read.csv("data/attributes/attribute_definitions.csv")
-temp.df <- read.csv("data/raw/individuals/rsharp/listen_history_1year.csv", row.names = 1)
+temp.df <- read.csv("data/raw/individuals/bgural/listen_history_1year.csv", row.names = 1)
 ```
 
 ```{r format times}
@@ -140,6 +140,139 @@ ggplot(day.df, aes(x = time_of_day, fill = day_of_week)) +
     legend.position = "none",
     panel.grid.minor = element_blank()
   )
+
+
+```
+
+
+```{r top days , fig.width=20, fig.height=15}
+
+library(lubridate)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+
+# Add a date_only column and an hour column to final.df
+final.df <- final.df %>% mutate(
+  date_only = as.Date(endTime),
+  hour = lubridate::hour(endTime)
+)
+
+# Identify the top 5 days based on total listening time
+top_5_days <- final.df %>% 
+  group_by(date_only) %>% 
+  summarise(total_time = sum(msPlayed)) %>% 
+  arrange(desc(total_time)) %>% 
+  slice_head(n = 5) %>% 
+  pull(date_only)
+
+# Identify the top 10 artists for each of the top 5 days
+top_10_by_day <- final.df %>% 
+  filter(date_only %in% top_5_days) %>%
+  group_by(date_only, artistName) %>% 
+  summarise(total_time_minutes = sum(msPlayed) / (1000 * 60), .groups = 'drop') %>% 
+  arrange(date_only, desc(total_time_minutes)) %>% 
+  group_by(date_only) %>% 
+  slice_head(n = 10) %>% 
+  summarise(artist_list = list(unique(artistName)))
+
+# Generate total listening time by hour for the top 5 days
+total_time_by_hour <- final.df %>% 
+  filter(date_only %in% top_5_days) %>% 
+  group_by(date_only, hour) %>% 
+  summarise(total_time_minutes = sum(msPlayed) / (1000 * 60), .groups = 'drop')
+
+# Generate total listening time by artist and hour for the top 5 days
+top_10_time_by_hour <- final.df %>% 
+  group_by(date_only, hour, artistName) %>% 
+  summarise(total_time_minutes = sum(msPlayed) / (1000 * 60), .groups = 'drop') 
+
+# Generate the plots using mapply
+plot_list <- mapply(function(date, artists) {
+  ggplot(aes(x=Sub, y=Prop, fill=CellType))  +
+   geom_bar(stat='identity',
+           position = "fill",
+           width = 0.8,
+           color = "black")
+  
+  
+  ggplot() +
+    geom_bar(data = total_time_by_hour %>% filter(date_only == date),
+             aes(x = hour, y = total_time_minutes),
+             stat = "identity", fill = "grey70") +
+    geom_bar(data = top_10_time_by_hour %>% filter(date_only == date, artistName %in% artists),
+             aes(x = hour, y = total_time_minutes, fill = artistName),
+             stat = "identity", color = "black") +
+    scale_fill_manual(values = as.vector(pals::kelly(17))) +
+    labs(title = paste0("Listening Time for ", date),
+         x = "Hour of the Day",
+         y = "Total Listening Time (minutes)") +
+    theme_minimal()
+}, top_5_days, top_10_by_day$artist_list, SIMPLIFY = FALSE)
+
+# Combine the individual plots into a grid
+patchwork::wrap_plots(plot_list, ncol = 2)
+
+```
+
+
+```{r working top  days plots, fig.width=20, fig.height=15}
+
+# Add a date_only column and an hour column to final.df
+final.df <- final.df %>% mutate(
+  date_only = as.Date(endTime),
+  hour = lubridate::hour(endTime)
+)
+top_5_days <- final.df %>% 
+  group_by(date_only) %>% 
+  summarise(total_time = sum(msPlayed)) %>% 
+  arrange(desc(total_time)) %>% 
+  slice_head(n = 5) %>% 
+  pull(date_only)
+
+top_10_artists_each_day <- final.df %>%
+  filter(date_only %in% top_5_days) %>%
+  group_by(date_only, artistName) %>%
+  summarise(total_time = sum(msPlayed)) %>%
+  arrange(date_only, desc(total_time)) %>%
+  group_by(date_only) %>%
+  slice_head(n = 10) %>%
+  ungroup()
+
+top_10_artists <- unique(top_10_artists_each_day$artistName)
+
+
+total_time_by_hour <- final.df %>% 
+  filter(date_only %in% top_5_days) %>% 
+  group_by(date_only, hour) %>% 
+  summarise(total_time_minutes = sum(msPlayed) / (1000 * 60))
+
+
+top_10_time_by_hour <- final.df %>% 
+  filter(date_only %in% top_5_days, artistName %in% top_10_artists) %>% 
+  group_by(date_only, hour, artistName) %>% 
+  summarise(total_time_minutes = sum(msPlayed) / (1000 * 60))
+
+
+plot_list <- lapply(top_5_days, function(date) {
+  ggplot() +
+    geom_bar(data = total_time_by_hour %>% filter(date_only == date),
+             aes(x = hour, y = total_time_minutes),
+             stat = "identity", fill = "grey70") +
+    geom_bar(data = top_10_time_by_hour %>% filter(date_only == date),
+             aes(x = hour, y = total_time_minutes, fill = artistName),
+             stat = "identity", color = "black") +
+    scale_fill_manual(values = as.vector(pals::kelly(17))) +
+    labs(title = paste0("Listening Time for ", date),
+         x = "Hour of the Day",
+         y = "Total Listening Time (minutes)") +
+    theme_minimal()
+})
+
+
+# Combine the individual plots into a grid
+patchwork::wrap_plots(plot_list, ncol = 2)
+
 
 
 ```
