@@ -20,7 +20,7 @@ lapply(libs, require, character.only = T)
 #lis.df <- read.csv("data/list_attr/bg_1y_t100.csv") # for non-shiny paths
 lis.df <- read.csv("data/merged_datasets/bg_1y_t500.csv")
 def.attr <- read.csv("data/attributes/attribute_definitions.csv")
-temp.df <- read.csv("data/raw/individuals/ammi/listen_history_1year.csv", row.names = 1)
+temp.df <- read.csv("data/raw/individuals/bgural/listen_history_1year.csv", row.names = 1)
 ```
 
 ```{r format times}
@@ -77,7 +77,7 @@ p <- ggplot(plot_df, aes(x = day, y = hour, fill = min_listened)) +
   scale_y_continuous(trans = "reverse", breaks = c(0, 6, 12, 18,24)) +
   scale_x_continuous(breaks = c(15,30)) +
   theme_minimal(base_size = 8) +
-  labs(title = "Hourly minutes played", x = "Day", y = "Hour Commencing") +
+  labs(title = "Minutes played, hour-by-hour, over the past year", x = "Day (split into months)", y = "Time of day (binned into hour blocks)") +
   theme(legend.position = "bottom",
         panel.spacing = unit(0, "lines"),
         plot.title = element_text(size = 14),
@@ -262,7 +262,7 @@ plot_list <- lapply(top_5_days, function(date) {
     geom_bar(data = top_10_time_by_hour %>% filter(date_only == date),
              aes(x = hour, y = total_time_minutes, fill = artistName),
              stat = "identity", color = "black") +
-    scale_fill_manual(values = as.vector(pals::kelly(21))) +
+    scale_fill_manual(values = as.vector(pals::polychrome(29))) +
     labs(title = paste0("Listening Time for ", date),
          x = "Hour of the Day",
          y = "Total Listening Time (minutes)") +

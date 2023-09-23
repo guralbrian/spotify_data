@@ -21,7 +21,7 @@ rm(libs)
 
 
 ```{r load data}
-df <- read.csv("data/raw/individuals/ammi/listen_history_1year.csv", row.names = 1)
+df <- read.csv("data/raw/individuals/garias/listen_history_1year.csv", row.names = 1)
 ```
 ```{r data cleaning}
 df <- df %>%
@@ -58,6 +58,11 @@ total.artist <- df %>%
   arrange(desc(hr_played))%>%
   head(10) 
 
+# make custom palette 
+
+df$trackName_wrap = str_wrap(df$trackName, width = 20)
+
+
 #Turn your 'treatment' column into an ordered factor 
 total.artist$artistName <-  factor(total.artist$artistName, levels=top.artists)
 
@@ -85,7 +90,7 @@ daily.artists$artistName <-  factor(daily.artists$artistName, levels=top.artists
 
 p.daily.artists <- daily.artists |> 
   ggplot(aes(x = time_of_day, y = artistName, group = artistName)) +
-    geom_density_ridges_gradient(aes(fill = artistName), alpha = 0.5, scale = 0.8) + 
+    geom_density_ridges_gradient(aes(fill = artistName), alpha = 0.5, scale = 1.2, color = "black") + 
     scale_fill_manual(values=as.vector(kelly(10))) +
     scale_x_continuous(breaks = c(0,6,12,18,24),
                      limits = c(0,24)) +
@@ -114,7 +119,8 @@ p.yearly.artists <- yearly.artists |>
   ggplot(aes(x = date_only, y = artistName, group = artistName)) +
     geom_density_ridges(aes(fill = artistName), 
                         inherit.aes = T,
-                        scale = 1.2) +
+                        scale = 1.2,
+                        color = "black") +
     scale_fill_manual(values=as.vector(kelly(10))) +
     labs(title = "Play frequency of top artists over past year",
          x = "Past year listening density") +
@@ -137,7 +143,7 @@ w.artist <- wrap_plots(
            D = p.total.artist,
            E = p.daily.artists, G = p.yearly.artists, design = design)
 
-w.artist + plot_annotation(title = "Ammi's Top Artists",
+w.artist + plot_annotation(title = "Gabo Babo's Top Artists",
                            theme = theme(plot.title = element_text(size = 25)))
 ```
 ```{r basic visuals, echo=FALSE}
@@ -210,14 +216,10 @@ w.person <- wrap_plots(A = p.time.monthly,  B = p.time.hourly,
            C = p.top.tracks,     
            E = p.daily.artists, G = p.yearly.artists, design = design)
 
-w.person + plot_annotation(title = "Ammi's favorite music and listening times",
+w.person + plot_annotation(title = "Gabo Babo's favorite music and listening times",
                            theme = theme(plot.title = element_text(size = 25)))
 ```
-```{r plot intro graphs, fig.width= 14, fig.height=8}
 
-w.artist + plot_annotation(title = "Ammi's Top Artists",
-                           theme = theme(plot.title = element_text(size = 25)))
-```
 
 
 

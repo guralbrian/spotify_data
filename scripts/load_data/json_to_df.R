@@ -4,7 +4,7 @@
 library("rjson")
 library("tidyverse")
 
-person <- "ammi"
+person <- "garias"
 # List all files that match the pattern "StreamingHistory*.json" in the folder
 files_to_load <- list.files(paste0("data/raw/individuals/", person), pattern = "StreamingHistory.*\\.json$", full.names = TRUE)
 
