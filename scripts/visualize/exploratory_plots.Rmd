@@ -21,7 +21,7 @@ rm(libs)
 
 
 ```{r load data}
-df <- read.csv("data/raw/individuals/garias/listen_history_1year.csv", row.names = 1)
+df <- read.csv("~/data/raw/individuals/bgural/listen_history_1year.csv", row.names = 1)
 ```
 ```{r data cleaning}
 df <- df %>%
@@ -49,7 +49,7 @@ top.artists <- df %>%
   head(10) |> 
   pull(artistName)
 
-pal <- kelly(10)
+pal <- pals::kelly(10)
 names(pal) <- top.artists
 
 total.artist <- df %>%
@@ -73,6 +73,7 @@ p.total.artist <- total.artist |>
   geom_col(colour="black") +
   coord_flip() +
   scale_fill_manual(values = pal) +
+  scale_x_discrete(limits = rev(levels(total.artist$artistName))) + 
   xlab("Artist") +
   ylab("Total Hours Listened") +
   ggtitle("Total Listening Time Per Artist") +
@@ -81,7 +82,7 @@ p.total.artist <- total.artist |>
     legend.position = "none"
   )
 
-
+# Summarize listening trends of artists by time of day
 daily.artists <- df |> 
   subset(artistName == top.artists) |> 
   mutate(time_of_day = as.numeric(hour) + as.numeric(minute/60)) 
@@ -94,6 +95,7 @@ p.daily.artists <- daily.artists |>
     scale_fill_manual(values=as.vector(kelly(10))) +
     scale_x_continuous(breaks = c(0,6,12,18,24),
                      limits = c(0,24)) +
+    scale_y_discrete(limits = rev(levels(daily.artists$artistName))) + 
     labs(title = "Daily listening times of top artists",
          x = "Daily listening density") +
     theme_minimal() +
@@ -107,11 +109,12 @@ p.daily.artists <- daily.artists |>
   )
 
 
+
 yearly.artists <-  df |> 
   subset(artistName %in% top.artists) |> 
   mutate(date_only = as.Date(endTime))
 
-#Turn your 'treatment' column into an ordered factor 
+#Turn 'treatment' column into an ordered factor 
 yearly.artists$artistName <-  factor(yearly.artists$artistName, levels=top.artists)
 
 
@@ -122,6 +125,7 @@ p.yearly.artists <- yearly.artists |>
                         scale = 1.2,
                         color = "black") +
     scale_fill_manual(values=as.vector(kelly(10))) +
+    scale_y_discrete(limits = rev(levels(yearly.artists$artistName))) +
     labs(title = "Play frequency of top artists over past year",
          x = "Past year listening density") +
     theme_minimal() +
@@ -143,8 +147,13 @@ w.artist <- wrap_plots(
            D = p.total.artist,
            E = p.daily.artists, G = p.yearly.artists, design = design)
 
-w.artist + plot_annotation(title = "Gabo Babo's Top Artists",
+pdf_path_1 <- "~/results/readme/images/brian_tartists_09242023.pdf"
+if(file.exists(pdf_path_1) == F) {
+pdf(pdf_path_1)}
+w.artist + plot_annotation(title = "Brian's Top Artists",
                            theme = theme(plot.title = element_text(size = 25)))
+
+dev.off()
 ```
 ```{r basic visuals, echo=FALSE}
 
@@ -216,8 +225,15 @@ w.person <- wrap_plots(A = p.time.monthly,  B = p.time.hourly,
            C = p.top.tracks,     
            E = p.daily.artists, G = p.yearly.artists, design = design)
 
-w.person + plot_annotation(title = "Gabo Babo's favorite music and listening times",
+pdf_path_2 <- "~/results/readme/images/brian_summary_09242023.pdf"
+if(file.exists(pdf_path_2) == F) {
+pdf(pdf_path_2)}
+
+
+w.person + plot_annotation(title = "Brian's favorite music and listening times",
                            theme = theme(plot.title = element_text(size = 25)))
+
+dev.off()
 ```
 
 

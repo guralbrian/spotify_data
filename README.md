@@ -10,6 +10,13 @@ This project is focused on a comprehensive analysis of personal listening habits
 Spotify users [can go here](https://www.spotify.com/us/account/privacy/) to request their own data. 
 
 
+## Example Plots
+
+![Plot 1](https://github.com/guralbrian/spotify_data/tree/main/results/readme/images/brian_tartists_09242023.pdf?raw=true)
+
+![Plot 2](https://github.com/guralbrian/spotify_data/tree/main/results/readme/images/brian_summary_09242023.pdf?raw=true)
+
+
 ## Getting Started 
 
 This analysis pipeline is intented to be containerized via Docker. Once completed, one will be able to follow the directions below to set up a Docker container, then run Snakemake within the container.
