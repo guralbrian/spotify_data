@@ -18,11 +18,13 @@ This analysis pipeline is intented to be containerized via Docker. Once complete
 
 To run the code, build the Docker image and then start an RStudio server:
 
-docker build . -t spotify_analysis
+docker build -t spotify_analysis . 
 
-docker run -e PASSWORD=your_password -v (pwd):/home/rstudio/work -p 8787:8787 --rm spotify_analysis
+docker run -d -p 8787:8787 -e PASSWORD=yourpasswordhere -v $(pwd):/home/rstudio spotify_analysis
 
 Open your web browser and go to http://localhost:8787.
 
 Username: rstudio
 Password: your_password
+
+Note: The `docker run` line uses the argument `-v $(pwd):/home/rstudio` to mount the current working directory to the docker container, then make the relative path to it (within the container) `/home/rstudio`

@@ -57,3 +57,7 @@ rsconnect/
 
 # no data folders
 data/raw/individuals
+
+# Local Docker files
+
+.local/
