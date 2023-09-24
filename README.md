@@ -34,4 +34,8 @@ Open your web browser and go to http://localhost:8787.
 Username: rstudio
 Password: your_password
 
+
+To kill the docker container, find the container ID with `docker ps -a`, then use the container ID in `docker kill "container ID"`.
+
+
 Note: The `docker run` line uses the argument `-v $(pwd):/home/rstudio` to mount the current working directory to the docker container, then make the relative path to it (within the container) `/home/rstudio`
