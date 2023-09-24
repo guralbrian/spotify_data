@@ -2,7 +2,10 @@
 title: "BIOS 611 HW 2"
 author: "Brian Gural"
 date: "2023-09-23"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -169,9 +172,7 @@ pip
 install.packages
 ```
 
-
 **Answer**
-
 
 `apt` is pre-compiled and fast. Offers automatic update notifications, checks if other dependencies are installed or conflicting. Generally safer. 
 
@@ -179,78 +180,100 @@ install.packages
 
 `install.packages` is an R language package manager. It'll look for the newest version of a package managed by CRAN. For biologically-minded packages and those managed by Bioconductor, `BiocManager::install()` can be more convenient. 
 
-
-```{bash, eval = FALSE}
-
-```
-
-
-
-
-
-
-
-
-
-
-## Problem 
+## Problem 8 
 
 **Question**
 
-
-
-```{bash, eval = FALSE}
-
-```
-
-
-
-```{bash, eval = FALSE}
-
-```
-
-
+Get `man ls` and other manuals to work in the rocker terminal
 
 **Answer**
 
-## Problem 
+This is the script I added to `Dockerfile` to get access to the `man` command in the rocker terminal:
+
+```{bash, eval = FALSE}
+# Update package list and install man-db
+## This is to see the manual of bash commands while in the Rstudio container
+RUN apt update && apt install -y man-db && rm -rf /var/lib/apt/lists/*
+
+## Unminimize the system
+RUN yes | unminimize
+
+```
+
+In a nutshell, it gets an up-to-date list of packages it can install, then installs `man-db`, says yes to all of it's prompts, then removes the apt list from earlier to keep the image space tidy. 
+
+The next `RUN` line undoes the minimized installation, giving full access to the man/documentation pages. It also needs "yes" responses, so we use the `yes` command to pipe an infinite series of affirmations to our needy command. After, we can build and run the image. In the terminal, we have full access to  `man`:
+
+```{bash, eval = FALSE}
+rstudio@03b2cd749247:~$ man ls
+LS(1)                                      User Commands                                      LS(1)
+
+NAME
+       ls - list directory contents
+
+SYNOPSIS
+       ls [OPTION]... [FILE]...
+```
+
+
+## Problem 9 
 
 **Question**
 
-
-
-```{bash, eval = FALSE}
-
-```
-
-
-
-```{bash, eval = FALSE}
-
-```
-
-
+Compare number of lines in `find`, `man`, and `ls` manual pages: 
 
 **Answer**
 
-## Problem 
+First, I made a shell script and started editing with: 
+
+```{bash, eval = FALSE}
+guralbrian@bleep:~/github/spotify_data$ touch homeworks/hw_2/q9.sh
+guralbrian@bleep:~/github/spotify_data$ code homeworks/hw_2/q9.sh 
+```
+
+Then I filled it with the following:
+
+```{bash, eval = FALSE}
+#!/bin/bash
+
+# Temp, empty file to store results
+> results.txt
+
+# Loop through each command and 
+# Record number of lines in its man page
+# get manual, pipe into word count by lines, pipe into awk to format the output as command + lines
+for cmd in man ls find; do
+  man $cmd | wc -l | awk -v cmd=$cmd '{print cmd "," $1}' >> results.txt
+done
+
+# Part to sort the contents of the temp results.txt by number of lines
+# Prints the results too, with awk to do the formatting
+sort -t, -k2,2 -g -r results.txt | awk -F, '{print $1 " has " $2 " lines in its man page"}'
+
+# Remove the temporary results file
+rm results.txt
+```
+
+Then I made it executable and ran it, with 
+
+```{bash, eval = FALSE}
+guralbrian@bleep:~/github/spotify_data$ chmod +x homeworks/hw_2/q9.sh 
+guralbrian@bleep:~/github/spotify_data$ homeworks/hw_2/q9.sh 
+find has 1660 lines in its man page
+man has 699 lines in its man page
+ls has 242 lines in its man page
+```
+
+
+## Problem 10
 
 **Question**
 
-
-
-```{bash, eval = FALSE}
-
-```
-
-
-
-```{bash, eval = FALSE}
-
-```
-
-
+Get the project repo, docker, and readme.md set up
 
 **Answer**
+
+[Here it is!](https://github.com/guralbrian/spotify_data)
+
 
 
