@@ -12,9 +12,9 @@ Spotify users [can go here](https://www.spotify.com/us/account/privacy/) to requ
 
 ## Example Plots
 
-![Plot 1](https://github.com/guralbrian/spotify_data/tree/main/results/readme/images/brian_tartists_09242023.png?raw=true)
+![Plot 1](https://github.com/guralbrian/spotify_data/blob/main/results/readme/images/brian_tartists_09242023.png?raw=true)
 
-![Plot 2](https://github.com/guralbrian/spotify_data/tree/main/results/readme/images/brian_summary_09242023.png?raw=true)
+![Plot 2](https://github.com/guralbrian/spotify_data/blob/main/results/readme/images/brian_summary_09242023.png?raw=true)
 
 
 ## Getting Started 
