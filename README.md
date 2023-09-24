@@ -1,7 +1,7 @@
 # Spotify Listening Analysis in R
 
 Written by [Brian Gural](https://www.linkedin.com/in/brian-gural-09bb60128/) \
-README last updated on September 6th 2023
+README last updated on September 24th 2023
 
 ## Project Goals
 
