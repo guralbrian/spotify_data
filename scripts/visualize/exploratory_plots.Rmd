@@ -147,9 +147,9 @@ w.artist <- wrap_plots(
            D = p.total.artist,
            E = p.daily.artists, G = p.yearly.artists, design = design)
 
-pdf_path_1 <- "~/results/readme/images/brian_tartists_09242023.pdf"
+png_path_1 <- "~/results/readme/images/brian_tartists_09242023.png"
 if(file.exists(pdf_path_1) == F) {
-pdf(pdf_path_1)}
+png(png_path_1, width = 14, height = 8, units = "in", res = 300)}
 w.artist + plot_annotation(title = "Brian's Top Artists",
                            theme = theme(plot.title = element_text(size = 25)))
 
@@ -225,9 +225,9 @@ w.person <- wrap_plots(A = p.time.monthly,  B = p.time.hourly,
            C = p.top.tracks,     
            E = p.daily.artists, G = p.yearly.artists, design = design)
 
-pdf_path_2 <- "~/results/readme/images/brian_summary_09242023.pdf"
+png_path_2 <- "~/results/readme/images/brian_summary_09242023.png"
 if(file.exists(pdf_path_2) == F) {
-pdf(pdf_path_2)}
+png(png_path_2, width = 14, height = 8, units = "in", res = 300)}
 
 
 w.person + plot_annotation(title = "Brian's favorite music and listening times",
