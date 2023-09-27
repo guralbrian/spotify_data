@@ -16,8 +16,8 @@ rm(libs)
 ```
 
 ```{r load data}
-name <- "Brian"
-id <- 'bgural'
+name <- "Maria"
+id <- 'malhaddad'
 df <- read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/listen_history_a.csv"), row.names = 1) 
 
 ```
@@ -71,7 +71,7 @@ p.cum.date <- ggplot(df, aes(x = day_of_year, y = cumulative_time, color = as.fa
        x = "Day in year",
        y = "Cumulative Listening Time (days)") +
   theme_minimal() +
-  scale_color_manual(values=as.vector(kelly(length(unique(df$year))))) +
+  scale_color_manual(values=as.vector(watlington(length(unique(df$year))))) +
   theme(text = element_text(size = 15),
         axis.title = element_text(size = 18),
         title = element_text(size = 18, hjust = 0.5),
@@ -102,7 +102,7 @@ p.uni.art <- ggplot(df, aes(x = day_of_year, y = unique_artists, color = as.fact
        x = "Day in the year",
        y = "Number of artists") +
   theme_minimal() +
-  scale_color_manual(values=as.vector(kelly(length(unique(df$year))))) +
+  scale_color_manual(values=as.vector(watlington(length(unique(df$year))))) +
   theme(text = element_text(size = 15),
         axis.title = element_text(size = 18),
         title = element_text(size = 18, hjust = 0.5),
@@ -129,13 +129,19 @@ wrap_plots(p.cum.date, p.uni.art, ncol = 2) + plot_annotation(theme = theme(plot
 
 
 ```{r artist markers}
-
-library(dplyr)
-library(tidyr)
+# Define Seasons
+df$season <- case_when(
+  lubridate::month(df$endTime) %in% c(3, 4, 5)  ~ 'Spring',
+  lubridate::month(df$endTime) %in% c(6, 7, 8)  ~ 'Summer',
+  lubridate::month(df$endTime) %in% c(9, 10, 11) ~ 'Autumn',
+  lubridate::month(df$endTime) %in% c(12, 1, 2) ~ 'Winter',
+  TRUE ~ 'Unknown'
+)
 
 # Calculate the total and variance of listening time per artist per individual
 artist_stats <- df %>%
-  group_by(year, artistName) %>%
+  mutate(year_season = paste(year, season, sep = " - ")) %>% 
+  group_by(year_season, artistName) %>%
   summarise(
     total_time = sum(msPlayed),
     var_time = var(msPlayed)
@@ -152,45 +158,58 @@ between_var <- artist_stats %>%
 artist_stats <- left_join(artist_stats, between_var, by = "artistName")
 
 
-# Step 1: Identify the top 50 artists for each year
-top_50_artists <- artist_stats %>%
-  group_by(year) %>%
+# Step 1: Identify the top 100 artists for each year
+top_100_artists <- artist_stats %>%
+  group_by(year_season) %>%
   arrange(desc(total_time)) %>%
-  slice_head(n = 50) %>%
+  slice_head(n = 100) %>%
   ungroup()
 
-# Step 2: Identify artists that are unique to a year's top 50 list
-unique_artists <- top_50_artists %>%
+# Step 2: Identify artists that appear in the top 20 of more than one season
+top_20_artists <- artist_stats %>%
+  group_by(year_season) %>%
+  arrange(desc(total_time)) %>%
+  slice_head(n = 20) %>%
+  ungroup() %>%
   count(artistName) %>%
-  filter(n == 1) %>%
-  select(artistName)
+  filter(n > 2) 
 
-# Step 3: Filter the top 50 artists by the unique artists list
-unique_top_50_artists <- top_50_artists %>%
-  semi_join(unique_artists, by = "artistName")
+# Step 2.5: Identify artists that appear in the top 5 of more than one group
+top_5_artists <- artist_stats %>%
+  group_by(year_season) %>%
+  arrange(desc(total_time)) %>%
+  slice_head(n = 5) %>%
+  ungroup() %>%
+  count(artistName) %>%
+  filter(n > 1) 
+
+# Step 3: Identify artists that are unique after removing top 25 artists from any other year
+unique_artists <- top_100_artists %>%
+  anti_join(top_20_artists, by = "artistName") %>%
+  anti_join(top_5_artists, by = "artistName")
 
 # Step 4: Arrange by between-individual variance (if needed)
-unique_top_50_artists <- unique_top_50_artists %>%
-  group_by(year) |> 
+unique_top_artists <- unique_artists %>%
+  group_by(year_season) |> 
   arrange(desc(between_var)) |> 
   slice_head(n = 50) |> 
   arrange(desc(total_time)) |> 
   slice_head(n = 15) |> 
-  select(year, artistName)
+  select(year_season, artistName)
 
-markers <- unique_top_50_artists %>%
-  group_by(year) %>%
+markers <- unique_top_artists %>%
+  group_by(year_season) %>%
   mutate(marker_rank = row_number()) %>%
   ungroup() %>%
   filter(marker_rank <= 15) %>%  # Selecting top 10 unique markers for each individual
-  select(year, marker_rank, artistName) %>%
-  pivot_wider(names_from = year, values_from = artistName) %>%
+  select(year_season, marker_rank, artistName) %>%
+  pivot_wider(names_from = year_season, values_from = artistName) %>%
   arrange(marker_rank)
 
 
 colnames(markers)[1] <- c("Marker Rank")
 
-write.csv(markers, paste0("~/results/individuals/", id, "/yearly_artist_markers.csv"), row.names = F)
+write.csv(markers, paste0("~/results/individuals/", id, "/yr_seas_art_markers.csv"), row.names = F)
 ```
 
 
@@ -201,7 +220,8 @@ library(tidyr)
 
 # Calculate the total and variance of listening time per track per individual
 track_stats <- df %>%
-  group_by(year, trackName) %>%
+  mutate(year_season = paste(year, season, sep = " - ")) %>% 
+  group_by(year_season, trackName) %>%
   summarise(
     total_time = sum(msPlayed),
     var_time = var(msPlayed)
@@ -218,45 +238,58 @@ between_var <- track_stats %>%
 track_stats <- left_join(track_stats, between_var, by = "trackName")
 
 
-# Step 1: Identify the top 50 tracks for each year
-top_50_tracks <- track_stats %>%
-  group_by(year) %>%
+# Step 1: Identify the top 100 artists for each year
+top_100_tracks <- track_stats %>%
+  group_by(year_season) %>%
   arrange(desc(total_time)) %>%
-  slice_head(n = 50) %>%
+  slice_head(n = 100) %>%
   ungroup()
 
-# Step 2: Identify tracks that are unique to a year's top 50 list
-unique_tracks <- top_50_tracks %>%
+# Step 2: Identify artists that appear in the top 15 of more than two groups
+top_15_tracks <- track_stats %>%
+  group_by(year_season) %>%
+  arrange(desc(total_time)) %>%
+  slice_head(n = 15) %>%
+  ungroup() %>%
   count(trackName) %>%
-  filter(n == 1) %>%
-  select(trackName)
+  filter(n > 2) 
 
-# Step 3: Filter the top 50 tracks by the unique tracks list
-unique_top_50_tracks <- top_50_tracks %>%
-  semi_join(unique_tracks, by = "trackName")
+# Step 2.5: Identify artists that appear in the top 5 of more than one group
+top_5_tracks <- track_stats %>%
+  group_by(year_season) %>%
+  arrange(desc(total_time)) %>%
+  slice_head(n = 5) %>%
+  ungroup() %>%
+  count(trackName) %>%
+  filter(n > 1) 
+
+# Step 3: Identify artists that are unique after removing top 25 artists from any other year
+unique_tracks <- top_100_tracks %>%
+  anti_join(top_15_tracks, by = "trackName") %>% 
+  anti_join(top_5_tracks, by = "trackName")
 
 # Step 4: Arrange by between-individual variance (if needed)
-unique_top_50_tracks <- unique_top_50_tracks %>%
-  group_by(year) |> 
+unique_top_tracks <- unique_tracks %>%
+  group_by(year_season) |> 
   arrange(desc(between_var)) |> 
-  slice_head(n = 50) |> 
+  slice_head(n = 25) |> 
   arrange(desc(total_time)) |> 
-  slice_head(n = 15) |> 
-  select(year, trackName)
+  slice_head(n = 10) |> 
+  select(year_season, trackName)
 
-markers <- unique_top_50_tracks %>%
-  group_by(year) %>%
+markers <- unique_top_tracks %>%
+  group_by(year_season) %>%
   mutate(marker_rank = row_number()) %>%
   ungroup() %>%
   filter(marker_rank <= 15) %>%  # Selecting top 10 unique markers for each individual
-  select(year, marker_rank, trackName) %>%
-  pivot_wider(names_from = year, values_from = trackName) %>%
+  select(year_season, marker_rank, trackName) %>%
+  pivot_wider(names_from = year_season, values_from = trackName) %>%
   arrange(marker_rank)
 
 
 colnames(markers)[1] <- c("Marker Rank")
 
-write.csv(markers, paste0("~/results/individuals/", id, "/yearly_track_markers.csv"), row.names = F)
+write.csv(markers, paste0("~/results/individuals/", id, "/yr_seas_track_markers.csv"), row.names = F)
 ```
 
 

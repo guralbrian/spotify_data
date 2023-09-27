@@ -1,7 +1,7 @@
 library("jsonlite")
 library("tidyverse")
 
-person <- "rsharp"
+person <- "malhaddad"
 
 # List files for the first type of naming, e.g., "Streaming_History_Audio_2018_3.json"
 first_type_files <- list.files(paste0("data/raw/individuals/", person, "/extended/MyData"), 
