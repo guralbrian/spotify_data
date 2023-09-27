@@ -18,9 +18,11 @@ rm(libs)
 ```
 
 ```{r load data}
-name <- "brian"
+name <- "Brian"
 id <- 'bgural'
-df <- read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/listen_history_b.csv"), row.names = 1)
+df <- read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/listen_history_a.csv"), row.names = 1) # #%>% 
+      #rbind(read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/listen_history_b.csv"), row.names = 1))
+
 ```
 ```{r data cleaning}
 
@@ -125,7 +127,7 @@ p.yearly.artists <- yearly.artists |>
     scale_fill_manual(values=as.vector(kelly(10))) +
     scale_y_discrete(limits = rev(levels(yearly.artists$artistName))) +
     labs(title = "When artists were played overall",
-         x = "Past year listening density") +
+         x = "Date") +
     theme_minimal() +
     theme(
       strip.background = element_blank(),
@@ -148,7 +150,7 @@ w.artist <- wrap_plots(
 #png_path_1 <- "~/results/readme/images/brian_tartists_09242023.png"
 #if(file.exists(pdf_path_1) == F) {
 #png(png_path_1, width = 14, height = 8, units = "in", res = 300)}
-w.artist + plot_annotation(title = paste0(name, "Top Artists"),
+w.artist + plot_annotation(title = paste0(name, "'s Top Artists"),
                            theme = theme(plot.title = element_text(size = 25)))
 
 #dev.off()
@@ -190,7 +192,7 @@ p.top.tracks <- df |>
   labs(colour="Artist") +
   theme_minimal() + 
   theme(
-    legend.position = c(0.8, 0.3),
+    legend.position = c(0.7, 0.4),
     legend.background = element_rect(fill="white",
                                   size=0.5, linetype="solid", 
                                   colour ="black"),
@@ -268,13 +270,17 @@ total.ip <- df %>%
   head(10)
 
 
+#Turn your 'treatment' column into an ordered factor 
+total.ip$ip_addr_decrypted <-  factor(total.ip$ip_addr_decrypted, levels=top.ip)
+
+
 # Get listening time by artist
 p.total.artist <- total.ip |> 
   ggplot(aes(x = ip_addr_decrypted, y = hr_played, fill = ip_addr_decrypted)) +
   geom_col(colour="black") +
   coord_flip() +
   scale_fill_manual(values = pal) +
-  scale_x_discrete(limits = rev(levels(total.artist$ip_addr_decrypted))) + 
+  scale_x_discrete(limits = rev(levels(total.ip$ip_addr_decrypted))) + 
   xlab("IP Address") +
   ylab("Total Hours Listened") +
   ggtitle("Total Listening Time Per IP Address") +
@@ -356,5 +362,15 @@ w.artist + plot_annotation(title = paste0(name, "Top Artists"),
                            theme = theme(plot.title = element_text(size = 25)))
 
 #dev.off()
+```
+
+```{r geolocataion}
+#devtools::install_github("ironholds/rgeolocate")
+#install.packages("locateip")
+library("locateip")
+
+#ip.locations <- sapply(top.ip, function(x){
+#              locate_ip(ip=x, fields=c("status,message,country,regionName,city,lat,lon"), 
+#                        lang="en", tidy=TRUE ) })
 ```
 ```
