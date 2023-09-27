@@ -219,21 +219,36 @@ p.time.monthly <- df %>%
 ```
 
 ```{r plot intro graphs, fig.width= 14, fig.height=8}
-design <- "CB
-           CA" 
-w.person <- wrap_plots(A = p.time.monthly,  B = p.time.hourly, 
-           C = p.top.tracks,     
-           E = p.daily.artists, G = p.yearly.artists, design = design)
-
-png_path_2 <- "~/results/readme/images/brian_summary_09242023.png"
-if(file.exists(pdf_path_2) == F) {
-png(png_path_2, width = 14, height = 8, units = "in", res = 300)}
+library(tidyverse)
+library(lubridate)
 
 
-w.person + plot_annotation(title = "Brian's favorite music and listening times",
-                           theme = theme(plot.title = element_text(size = 25)))
+# Calculate the total listening time per IP address
+top_10_ip <- df %>%
+  group_by(ip_addr_decrypted) %>%
+  summarise(totalHoursPlayed = sum(hoursPlayed)) %>%
+  arrange(desc(totalHoursPlayed)) %>%
+  head(10)
 
-dev.off()
+# Plot total listening time for top 10 IP addresses
+top_10_ip %>%
+  ggplot(aes(x = reorder(ip_addr_decrypted, -totalHoursPlayed), y = totalHoursPlayed)) +
+  geom_col() +
+  labs(title = "Total Listening Time for Top 10 IP Addresses",
+       x = "IP Address",
+       y = "Total Listening Time (seconds)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Get the date ranges for the top 10 IP addresses
+date_ranges <- df %>%
+  filter(ip_addr_decrypted %in% top_10_ip$ip_addr_decrypted) %>%
+  group_by(ip_addr_decrypted) %>%
+  summarise(start_date = min(endTime),
+            end_date = max(endTime))
+
+# Show the date ranges
+print(date_ranges)
+
 ```
 
 
