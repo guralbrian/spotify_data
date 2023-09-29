@@ -16,25 +16,9 @@ rm(libs)
 ```
 
 ```{r load data}
-name <- "Maria"
-id <- 'malhaddad'
-df <- read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/listen_history_a.csv"), row.names = 1) 
-
-```
-```{r data cleaning}
-
-df <- df %>%
-  mutate(endTime = lubridate::ymd_hms(ts),
-         endTime = lubridate::with_tz(endTime, tzone = "America/New_York"),
-         minute  = lubridate::minute(endTime),
-         hour    = lubridate::hour(endTime),
-         month   = lubridate::month(endTime, label = T),
-         year    = lubridate::year(endTime),
-         hoursPlayed = ms_played / 3600000,
-         artistName = master_metadata_album_artist_name,
-         trackName = master_metadata_track_name,
-         msPlayed = ms_played) %>% 
-  subset(!is.na(artistName))
+name <- "Brian"
+id <- 'bgural'
+df <- read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/cleaned_hist.csv")) 
 
 ```
 
@@ -46,7 +30,8 @@ df <- df %>%
   arrange(year, endTime) %>%
   group_by(year) %>%
   mutate(cumulative_time = cumsum(as.numeric(msPlayed)) / (1000 * 60 * 60 * 24),
-         unique_artists = cumsum(!duplicated(artistName)))  # convert ms to minutes
+         unique_artists = cumsum(!duplicated(artistName)),
+         cumulative_plays = cumsum(as.numeric(percent_listened)))  # convert ms to minutes
 
 
 df <- df |> 
@@ -64,10 +49,10 @@ names(pal) <- unique(df$year)
 
 
 # Create the plot
-p.cum.date <- ggplot(df, aes(x = day_of_year, y = cumulative_time, color = as.factor(year))) +
+p.cum.time <- ggplot(df, aes(x = day_of_year, y = cumulative_time, color = as.factor(year))) +
   geom_line(size = 2)  +
   labs(title = "Total listening time",
-       subtitle = "Running sum of time spent\nlistening to Spotify, by year",
+       subtitle = "Running sum of time spent listening to Spotify, by year",
        x = "Day in year",
        y = "Cumulative Listening Time (days)") +
   theme_minimal() +
@@ -90,12 +75,38 @@ p.cum.date <- ggplot(df, aes(x = day_of_year, y = cumulative_time, color = as.fa
                             force = 2,
                             size = 6,
                             fill = "white") 
-
+# Create the plot
+p.cum.plays <- ggplot(df, aes(x = day_of_year, y = cumulative_plays, color = as.factor(year))) +
+  geom_line(size = 2)  +
+  labs(title = "Total Plays",
+       subtitle = "Running sum of tracks played in Spotify, by year",
+       x = "Day in year",
+       y = "Cumulative Plays") +
+  theme_minimal() +
+  scale_color_manual(values=as.vector(watlington(length(unique(df$year))))) +
+  theme(text = element_text(size = 15),
+        axis.title = element_text(size = 18),
+        title = element_text(size = 18, hjust = 0.5),
+        legend.position = 'none',
+        plot.margin = unit(c(1,3,0,0), "cm")) +
+  coord_cartesian(clip = 'off') +
+  ggrepel::geom_label_repel(aes(label = label), 
+                            family = "Spline Sans Mono",
+                            xlim = c(420, 420),
+                            hjust = "right",
+                            # style segment
+                            segment.curvature = .001,
+                            segment.inflect = TRUE, 
+                            direction = 'y',
+                            force_pull = 0.4,
+                            force = 2,
+                            size = 6,
+                            fill = "white") 
 
 # plot unique artists 
 
 # Create the plot
-p.uni.art <- ggplot(df, aes(x = day_of_year, y = unique_artists, color = as.factor(year))) +
+p.cum.art <- ggplot(df, aes(x = day_of_year, y = unique_artists, color = as.factor(year))) +
   geom_line(size = 2)  +
   labs(title = "Total artists played",
        subtitle = "Running tally of how many unique artists\nover each year",
@@ -123,52 +134,51 @@ p.uni.art <- ggplot(df, aes(x = day_of_year, y = unique_artists, color = as.fact
                             size = 6,
                             fill = "white") 
 
-wrap_plots(p.cum.date, p.uni.art, ncol = 2) + plot_annotation(theme = theme(plot.title = element_text(size = 25, hjust = 0.5)))
+wrap_plots(p.cum.plays, p.cum.time, ncol = 2) + plot_annotation(theme = theme(plot.title = element_text(size = 25, hjust = 0.5)))
 
 ```
 
 
 ```{r artist markers}
 # Define Seasons
-df$season <- case_when(
-  lubridate::month(df$endTime) %in% c(3, 4, 5)  ~ 'Spring',
-  lubridate::month(df$endTime) %in% c(6, 7, 8)  ~ 'Summer',
-  lubridate::month(df$endTime) %in% c(9, 10, 11) ~ 'Autumn',
-  lubridate::month(df$endTime) %in% c(12, 1, 2) ~ 'Winter',
+df$quarter <- case_when(
+  lubridate::month(df$endTime) %in% c(1, 2, 3)  ~ 'Q1',
+  lubridate::month(df$endTime) %in% c(4, 5, 6)  ~ 'Q2',
+  lubridate::month(df$endTime) %in% c(7, 8, 9) ~ 'Q3',
+  lubridate::month(df$endTime) %in% c(10, 11, 12) ~ 'Q4',
   TRUE ~ 'Unknown'
 )
 
 # Calculate the total and variance of listening time per artist per individual
 artist_stats <- df %>%
-  mutate(year_season = paste(year, season, sep = " - ")) %>% 
-  group_by(year_season, artistName) %>%
+  mutate(year_q = paste(year, quarter, sep = " - ")) %>% 
+  group_by(year_q, artistName) %>%
   summarise(
-    total_time = sum(msPlayed),
-    var_time = var(msPlayed)
+    total_plays = sum(percent_listened),
+    var_plays = var(percent_listened)
   ) %>%
-  replace_na(list(var_time = 0))  # Replace NA with 0
+  subset(total_plays >= 5)  # remove artists played less that 3 times
 
 # Calculate the between-individual variance for each artist
 between_var <- artist_stats %>%
   group_by(artistName) %>%
-  summarise(between_var = var(total_time)) %>%
-  replace_na(list(between_var = 0))
+  summarise(between_var = var(total_plays)) 
 
 # Join the within-individual and between-individual stats
 artist_stats <- left_join(artist_stats, between_var, by = "artistName")
 
 
-# Step 1: Identify the top 100 artists for each year
+# Step 1: Identify the top 200 artists for each year
 top_100_artists <- artist_stats %>%
-  group_by(year_season) %>%
-  arrange(desc(total_time)) %>%
-  slice_head(n = 100) %>%
+  group_by(year_q) %>%
+  arrange(desc(total_plays)) %>%
+  slice_head(n = 200) %>%
   ungroup()
 
 # Step 2: Identify artists that appear in the top 20 of more than one season
 top_20_artists <- artist_stats %>%
-  group_by(year_season) %>%
-  arrange(desc(total_time)) %>%
+  group_by(year_q) %>%
+  arrange(desc(total_plays)) %>%
   slice_head(n = 20) %>%
   ungroup() %>%
   count(artistName) %>%
@@ -176,8 +186,8 @@ top_20_artists <- artist_stats %>%
 
 # Step 2.5: Identify artists that appear in the top 5 of more than one group
 top_5_artists <- artist_stats %>%
-  group_by(year_season) %>%
-  arrange(desc(total_time)) %>%
+  group_by(year_q) %>%
+  arrange(desc(total_plays)) %>%
   slice_head(n = 5) %>%
   ungroup() %>%
   count(artistName) %>%
@@ -190,20 +200,20 @@ unique_artists <- top_100_artists %>%
 
 # Step 4: Arrange by between-individual variance (if needed)
 unique_top_artists <- unique_artists %>%
-  group_by(year_season) |> 
+  group_by(year_q) |> 
   arrange(desc(between_var)) |> 
   slice_head(n = 50) |> 
-  arrange(desc(total_time)) |> 
+  arrange(desc(total_plays)) |> 
   slice_head(n = 15) |> 
-  select(year_season, artistName)
+  select(year_q, artistName)
 
 markers <- unique_top_artists %>%
-  group_by(year_season) %>%
+  group_by(year_q) %>%
   mutate(marker_rank = row_number()) %>%
   ungroup() %>%
   filter(marker_rank <= 15) %>%  # Selecting top 10 unique markers for each individual
-  select(year_season, marker_rank, artistName) %>%
-  pivot_wider(names_from = year_season, values_from = artistName) %>%
+  select(year_q, marker_rank, artistName) %>%
+  pivot_wider(names_from = year_q, values_from = artistName) %>%
   arrange(marker_rank)
 
 
@@ -213,84 +223,82 @@ write.csv(markers, paste0("~/results/individuals/", id, "/yr_seas_art_markers.cs
 ```
 
 
-```{r artist markers}
-
-library(dplyr)
-library(tidyr)
+```{r track markers}
 
 # Calculate the total and variance of listening time per track per individual
 track_stats <- df %>%
-  mutate(year_season = paste(year, season, sep = " - ")) %>% 
-  group_by(year_season, trackName) %>%
+  mutate(year_q = paste(year, quarter, sep = " - ")) %>% 
+  group_by(year_q, trackName) %>%
   summarise(
-    total_time = sum(msPlayed),
-    var_time = var(msPlayed)
+    total_plays = sum(percent_listened),
+    var_plays = var(percent_listened)
   ) %>%
-  replace_na(list(var_time = 0))  # Replace NA with 0
+  subset(total_plays >= 5)  # remove tracks played less that 3 times
 
 # Calculate the between-individual variance for each track
 between_var <- track_stats %>%
   group_by(trackName) %>%
-  summarise(between_var = var(total_time)) %>%
-  replace_na(list(between_var = 0))
+  summarise(between_var = var(total_plays)) 
 
 # Join the within-individual and between-individual stats
 track_stats <- left_join(track_stats, between_var, by = "trackName")
 
 
-# Step 1: Identify the top 100 artists for each year
+# Step 1: Identify the top 100 tracks for each year
 top_100_tracks <- track_stats %>%
-  group_by(year_season) %>%
-  arrange(desc(total_time)) %>%
+  group_by(year_q) %>%
+  arrange(desc(total_plays)) %>%
   slice_head(n = 100) %>%
   ungroup()
 
-# Step 2: Identify artists that appear in the top 15 of more than two groups
-top_15_tracks <- track_stats %>%
-  group_by(year_season) %>%
-  arrange(desc(total_time)) %>%
-  slice_head(n = 15) %>%
+# Step 2: Identify tracks that appear in the top 20 of more than one season
+top_20_tracks <- track_stats %>%
+  group_by(year_q) %>%
+  arrange(desc(total_plays)) %>%
+  slice_head(n = 20) %>%
   ungroup() %>%
   count(trackName) %>%
   filter(n > 2) 
 
-# Step 2.5: Identify artists that appear in the top 5 of more than one group
+# Step 2.5: Identify tracks that appear in the top 5 of more than one group
 top_5_tracks <- track_stats %>%
-  group_by(year_season) %>%
-  arrange(desc(total_time)) %>%
+  group_by(year_q) %>%
+  arrange(desc(total_plays)) %>%
   slice_head(n = 5) %>%
   ungroup() %>%
   count(trackName) %>%
   filter(n > 1) 
 
-# Step 3: Identify artists that are unique after removing top 25 artists from any other year
+# Step 3: Identify tracks that are unique after removing top 25 tracks from any other year
 unique_tracks <- top_100_tracks %>%
-  anti_join(top_15_tracks, by = "trackName") %>% 
+  anti_join(top_20_tracks, by = "trackName") %>%
   anti_join(top_5_tracks, by = "trackName")
 
 # Step 4: Arrange by between-individual variance (if needed)
 unique_top_tracks <- unique_tracks %>%
-  group_by(year_season) |> 
+  group_by(year_q) |> 
   arrange(desc(between_var)) |> 
-  slice_head(n = 25) |> 
-  arrange(desc(total_time)) |> 
-  slice_head(n = 10) |> 
-  select(year_season, trackName)
+  slice_head(n = 50) |> 
+  arrange(desc(total_plays)) |> 
+  slice_head(n = 15) |> 
+  select(year_q, trackName)
 
 markers <- unique_top_tracks %>%
-  group_by(year_season) %>%
+  group_by(year_q) %>%
   mutate(marker_rank = row_number()) %>%
   ungroup() %>%
   filter(marker_rank <= 15) %>%  # Selecting top 10 unique markers for each individual
-  select(year_season, marker_rank, trackName) %>%
-  pivot_wider(names_from = year_season, values_from = trackName) %>%
+  select(year_q, marker_rank, trackName) %>%
+  pivot_wider(names_from = year_q, values_from = trackName) %>%
   arrange(marker_rank)
 
 
 colnames(markers)[1] <- c("Marker Rank")
 
-write.csv(markers, paste0("~/results/individuals/", id, "/yr_seas_track_markers.csv"), row.names = F)
+write.csv(markers, paste0("~/results/individuals/", id, "/yr_seas_art_markers.csv"), row.names = F)
 ```
+
+
 
 
 

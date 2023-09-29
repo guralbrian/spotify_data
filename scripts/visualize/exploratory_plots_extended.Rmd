@@ -20,8 +20,7 @@ rm(libs)
 ```{r load data}
 name <- "Brian"
 id <- 'bgural'
-df <- read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/listen_history_a.csv"), row.names = 1) # #%>% 
-      #rbind(read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/listen_history_b.csv"), row.names = 1))
+df <- read.csv(paste0("~/data/raw/individuals/", id, "/extended/MyData/listen_history_a.csv"), row.names = 1)
 
 ```
 ```{r data cleaning}
@@ -39,6 +38,10 @@ df <- df %>%
          msPlayed = ms_played) %>% 
   subset(!is.na(artistName))
 
+df <- df |> 
+      select(trackName, artistName, msPlayed, reason_start, reason_end, shuffle, skipped, platform)
+
+write.csv(df, paste0("~/data/raw/individuals/", id, "/extended/MyData/cleaned_hist.csv"), row.names = F)
 ```
 
 ```{r plot intro graphs, fig.width= 6, fig.height=6}
@@ -372,5 +375,4 @@ library("locateip")
 #ip.locations <- sapply(top.ip, function(x){
 #              locate_ip(ip=x, fields=c("status,message,country,regionName,city,lat,lon"), 
 #                        lang="en", tidy=TRUE ) })
-```
 ```
