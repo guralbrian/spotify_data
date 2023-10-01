@@ -9,6 +9,10 @@ RUN yes | unminimize
 # Need to have X11 to visualize plots
 RUN apt-get install -y --no-install-recommends libxt6
 
+RUN apt-get update && apt-get install -y \
+    libglpk-dev
+
+
 # Install required R packages
 # Quotes for package names need to be preceeded by \ 
 RUN R -e "install.packages(\"pals\")"
@@ -18,3 +22,8 @@ RUN R -e "install.packages(\"RColorBrewer\")"
 RUN R -e "install.packages(\"ggridges\")"
 RUN R -e "install.packages(\"viridis\")"
 RUN R -e "install.packages(\"rjson\")"
+RUN R -e "install.packages(\"ggrepel\")"
+#Seurat depenency
+RUN R -e "install.packages(\"igraph\")" 
+RUN R -e "BiocManager::install(\"Seurat\")"
+RUN R -e "install.packages(\"SCpubr\")" 
