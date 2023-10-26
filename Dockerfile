@@ -26,4 +26,6 @@ RUN R -e "install.packages(\"ggrepel\")"
 #Seurat depenency
 RUN R -e "install.packages(\"igraph\")" 
 RUN R -e "BiocManager::install(\"Seurat\")"
+RUN R -e "BiocManager::install(\"scran\")"
 RUN R -e "install.packages(\"SCpubr\")" 
+RUN R -e "install.packages(\"SingleCellExperiment\")" 
