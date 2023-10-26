@@ -48,15 +48,12 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-# CSV files
-*.csv
-
 # No json files
 *.json
 
 
 # no data folders
-data/raw/individuals
+data_private/
 results/individuals
 # Local Docker files
 
