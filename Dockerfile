@@ -12,6 +12,7 @@ RUN apt-get install -y --no-install-recommends libxt6
 RUN apt-get update && apt-get install -y \
     libglpk-dev
 
+WORKDIR /home/rstudio
 
 # Install required R packages
 # Quotes for package names need to be preceeded by \ 
@@ -29,3 +30,4 @@ RUN R -e "BiocManager::install(\"Seurat\")"
 RUN R -e "BiocManager::install(\"scran\")"
 RUN R -e "install.packages(\"SCpubr\")" 
 RUN R -e "install.packages(\"SingleCellExperiment\")" 
+

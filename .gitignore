@@ -55,6 +55,9 @@ rsconnect/
 # no data folders
 data_private/
 results/individuals
-# Local Docker files
 
+# No plots for homework
+results/skeleton
+
+# Local Docker files
 .local/
