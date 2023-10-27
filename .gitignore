@@ -51,7 +51,6 @@ rsconnect/
 # No json files
 *.json
 
-
 # no data folders
 data_private/
 results/individuals/
