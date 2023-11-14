@@ -4,18 +4,21 @@
 library("rjson")
 library("tidyverse")
 
-person <- "garias"
+person <- "June_White"
 # List all files that match the pattern "StreamingHistory*.json" in the folder
-files_to_load <- list.files(paste0("data/raw/individuals/", person), pattern = "StreamingHistory.*\\.json$", full.names = TRUE)
+
+files <- list.files(paste0("data_private/raw/individuals/", person, "/short/MyData"), 
+                    pattern = "StreamingHistory.*\\.json$", 
+                    full.names = TRUE)
 
 # Load and merge them into a single tibble
-merged_df <- files_to_load %>%
+merged_df <- files %>%
   lapply(jsonlite::fromJSON) %>%  
   bind_rows() %>%
   as_tibble()
 
 # Save the data
-write.csv(merged_df, paste0("data/raw/individuals/", person, "/listen_history_1year.csv"))
+write.csv(merged_df, paste0("data_private/raw/individuals/", person, "/short/MyData/listen_history_1year.csv"), row.names = F)
 
 
 
