@@ -60,3 +60,6 @@ results/skeleton/
 
 # Local Docker files
 .local/
+
+# Non-raw data
+data/raw/brian_gural/extended_clean.csv
