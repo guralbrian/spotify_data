@@ -6,10 +6,11 @@ libs <- c("tidyverse", "lubridate")
 lapply(libs, require, character.only = T)
 rm(libs)
 
+getwd()
 # List the person of interest
 #! could be made into a command arg
-person <- "brian_gural"
-df <- read.csv(paste0("data/raw/", person, "/extended_raw.csv"))
+person <- "Sarah_Lester"
+df <- read.csv(paste0("/home/rstudio/data_private/raw/individuals/", person, "/extended_raw.csv"))
 
 
 # Add annotation data
@@ -21,6 +22,7 @@ df <- df %>%
          hour    = lubridate::hour(endTime),
          month   = lubridate::month(endTime, label = T),
          year    = lubridate::year(endTime),
+         date    = lubridate::date(endTime),
          hoursPlayed = ms_played / 3600000,
          artistName = master_metadata_album_artist_name,
          trackName = master_metadata_track_name,
@@ -54,4 +56,4 @@ df <- df |>
   subset(percent_listened <= 1)
 
 # Save
-write.csv(df, paste0("~/data/raw/", person, "/extended_clean.csv"), row.names = F)
+write.csv(df, paste0("/home/rstudio/data_private/raw/individuals/", person, "/extended_clean.csv"), row.names = F)

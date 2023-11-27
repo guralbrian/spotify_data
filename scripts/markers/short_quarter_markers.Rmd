@@ -23,9 +23,9 @@ rm(libs)
 
 ```{r load data}
 # Load data
-id <- 'June_White'
+id <- 'Sarah_Lester'
 name <- str_split(id, "_")[[1]][1]
-df <- read.csv(paste0("/home/rstudio/data_private/raw/individuals/", id, "/short/MyData/extended_clean.csv"))
+df <- read.csv(paste0("/home/rstudio/data_private/raw/individuals/", id, "/extended_clean.csv"))
 
 ```
 
@@ -188,7 +188,7 @@ top_20_artists <- artist_stats %>%
   slice_head(n = 20) %>%
   ungroup() %>%
   count(artistName) %>%
-  filter(n > 2) 
+  filter(n > 3) 
 
 # Step 2.5: Identify artists that appear in the top 5 of more than one group
 top_5_artists <- artist_stats %>%
@@ -252,7 +252,7 @@ track_stats <- left_join(track_stats, between_var, by = "trackName")
 top_100_tracks <- track_stats %>%
   group_by(year_q) %>%
   arrange(desc(total_plays)) %>%
-  slice_head(n = 50) %>%
+  slice_head(n = 100) %>%
   ungroup()
 
 # Step 2: Identify tracks that appear in the top 20 of more than one season
@@ -263,7 +263,7 @@ top_20_tracks <- track_stats %>%
   ungroup() %>%
   group_by(trackName) %>%
   tally() %>%
-  filter(n > 2)
+  filter(n > 5)
 
 # Step 2.5: Identify tracks that appear in the top 5 of more than one group
 top_5_tracks <- track_stats %>%
@@ -302,4 +302,81 @@ markers <- unique_top_tracks %>%
 colnames(markers)[1] <- c("Marker Rank")
 
 write.csv(markers, paste0("~/results/individuals/", id, "/yr_seas_art_markers.csv"), row.names = F)
+```
+
+```{r track markers}
+
+# Calculate the total and variance of listening time per track per individual
+track_stats <- df %>%
+  #mutate(year_q = paste(year, quarter, sep = " - ")) %>% 
+  group_by(year, trackName) %>%
+  summarise(
+    total_plays = sum(percent_listened),
+    var_plays = var(percent_listened)
+  ) %>%
+  subset(total_plays >= 3)  # remove tracks played less that 3 times
+
+# Calculate the between-individual variance for each track
+between_var <- track_stats %>%
+  group_by(trackName) %>%
+  summarise(between_var = var(total_plays)) 
+
+# Join the within-individual and between-individual stats
+track_stats <- left_join(track_stats, between_var, by = "trackName")
+
+
+# Step 1: Identify the top 50 tracks for each year
+top_100_tracks <- track_stats %>%
+  group_by(year) %>%
+  arrange(desc(total_plays)) %>%
+  slice_head(n = 200) %>%
+  ungroup()
+
+# Step 2: Identify tracks that appear in the top 20 of more than one season
+top_20_tracks <- track_stats %>%
+  group_by(year) %>%
+  arrange(desc(total_plays)) %>%
+  slice_head(n = 30) %>%
+  ungroup() %>%
+  group_by(trackName) %>%
+  tally() %>%
+  filter(n > 3)
+
+# Step 2.5: Identify tracks that appear in the top 5 of more than one group
+top_5_tracks <- track_stats %>%
+  group_by(year) %>%
+  arrange(desc(total_plays)) %>%
+  slice_head(n = 5) %>%
+  ungroup() %>%
+  group_by(trackName) %>%
+  tally() %>%
+  filter(n > 1)
+
+# Step 3: Identify tracks that are unique after removing top 25 tracks from any other year
+unique_tracks <- top_100_tracks %>%
+  anti_join(top_20_tracks, by = "trackName") %>%
+  anti_join(top_5_tracks, by = "trackName")
+
+# Step 4: Arrange by between-individual variance (if needed)
+unique_top_tracks <- unique_tracks %>%
+  group_by(year) |> 
+  arrange(desc(between_var)) |> 
+  slice_head(n = 50) |> 
+  arrange(desc(total_plays)) |> 
+  slice_head(n = 15) |> 
+  select(year, trackName)
+
+markers <- unique_top_tracks %>%
+  group_by(year) %>%
+  mutate(marker_rank = row_number()) %>%
+  ungroup() %>%
+  filter(marker_rank <= 15) %>%  # Selecting top 10 unique markers for each individual
+  select(year, marker_rank, trackName) %>%
+  pivot_wider(names_from = year, values_from = trackName) %>%
+  arrange(marker_rank)
+
+
+colnames(markers)[1] <- c("Marker Rank")
+
+write.csv(markers, paste0("~/results/individuals/", id, "/yr_track_markers.csv"), row.names = F)
 ```
