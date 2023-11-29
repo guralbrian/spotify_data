@@ -8,7 +8,7 @@ rm(libs)
 getwd()
 # List the person of interest
 #! could be made into a command arg
-person <- "June_White"
+person <- "Anthony_Czarnik"
 df <- read.csv(paste0("/home/rstudio/data_private/raw/individuals/", person, "/short/MyData/listen_history_1year.csv"))
 
 

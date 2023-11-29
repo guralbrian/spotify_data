@@ -6,7 +6,7 @@ lapply(libs, require, character.only = T)
 rm(libs)
 
 # Load data
-id <- 'June_White'
+id <- 'Anthony_Czarnik'
 name <- str_split(id, "_")[[1]][1]
 df <- read.csv(paste0("/home/rstudio/data_private/raw/individuals/", id, "/short/MyData/extended_clean.csv"))
 
@@ -117,7 +117,7 @@ p.daily <- df |>
   scale_x_continuous(breaks = c(0,6,12,18,24),
                      limits = c(0,24)) +
   scale_y_continuous(breaks = c(0,0.05,0.1,0.15),
-                     limits = c(0,0.15)) +
+                     limits = c(0,0.26)) +
   facet_wrap(~ day_of_week, ncol = 1,
              strip.position = "right") +
   labs(title = "Daily listening density",
@@ -148,10 +148,10 @@ p.top.tracks <- df |>
   scale_fill_manual(values=as.vector(kelly(20)))  +
   ylab("Total Plays") +
   ggtitle("Top 20 Most Listened Tracks") +
-  labs(colour="Artist") +
+  labs(fill="Artist") +
   theme_minimal() + 
   theme(
-    legend.position = c(0.9, 0.4),
+    legend.position = c(0.85, 0.4),
     legend.background = element_rect(fill="white",
                                      size=0.5, linetype="solid", 
                                      colour ="black"),
