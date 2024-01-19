@@ -27,7 +27,7 @@ gunzip("~/homeworks/hw_5/data/embeddings_output_clean.csv.gz", remove=FALSE)
 ```
 
 ```{r load}
-data <- read.csv("~/homeworks/hw_5/data/embeddings_output_clean.csv")
+data <- read.csv("~/homeworks/hw_5/data/embeddings_output_clean.csv", header = F)
 ```
 
 ### Perform PCA on the dataset
@@ -93,11 +93,92 @@ data.old <- read.csv("https://raw.githubusercontent.com/Vincent-Toups/611ufo/mai
 data.old <- data.old |> 
         group_by(Summary) 
 
-table(data.old$Shape, useNA ="always")
+```
+```{r merge pc data }
+pc.merged <- cbind(pc.rot[,c(1,2)], data.old)
+
+# PC1 by PC2
+ggplot(pc.merged) +
+   geom_point(aes(x = PC1, y = PC2, color = lng), size = 2, alpha = 0.4) +
+   theme_minimal() +
+   theme(panel.grid.minor = element_blank()) +
+   labs(x = "PC1",
+        y = "PC2") +
+  labs(title = "UFO summary data PCs show three clusters",
+       subtitle = "Cluster 1: Large banana in center of plot\nCluster 2: Located at (-55,5)\nCluster 3: Located at (110,-65)")
+
+
 ```
 
+```{r make clusters}
+classify_cluster <- function(PC1, PC2) {
+       if (PC1 < -30) {
+    return('Cluster 1') # Large banana in center
+  } else if (PC1 > 100 && PC2 < -50) {
+    return('Cluster 2') # Group on bottom left
+  } else {
+    return('Cluster 3') # For any points that don't clearly belong to any cluster
+  }
+}
+
+# Apply the classification function to each row
+pc.merged <- pc.merged %>%
+  rowwise() %>%
+  mutate(Cluster = classify_cluster(PC1, PC2)) %>%
+  ungroup()
 
 
+
+```
+```{r clean times}
+
+library(lubridate)
+library(dplyr)
+library(stringr)
+
+# Inspect the dates that failed to parse
+unparsed_dates <- pc.merged %>%
+  mutate(parsed_date = parse_date_time(Date...Time, orders = c("mdy HM", "ymd HMS"))) %>%
+  filter(is.na(parsed_date))
+
+# View some of the unparsed dates to identify their formats
+print(head(unparsed_dates$Date...Time))
+
+# Once you've identified the additional formats, add them to the 'orders' vector
+# For example, let's assume you found a format like "yyyy/mm/dd HH:MM"
+additional_formats <- c("mdy HM", "ymd HMS", "ymd HM", "y/m/d HM")
+
+# Now, re-run the mutate with the expanded list of formats
+pc.merged <- pc.merged %>%
+  mutate(Date...Time = case_when(
+    str_detect(Date...Time, "^\\d{2}/\\d{2}/\\d{2}") ~ mdy_hm(Date...Time),  # Format: "mm/dd/yy hh:mm"
+    str_detect(Date...Time, "^\\d{4}-\\d{2}-\\d{2}") ~ ymd_hms(Date...Time), # Format: "yyyy-mm-dd hh.mm.ss"
+    TRUE ~ parse_date_time(Date...Time, orders = additional_formats)  # Fallback for other formats
+  ))
+
+# Check the results
+head(pc.merged$Date...Time)
+
+```
+```{r plot clusters}
+ggplot(pc.merged) +
+   geom_point(aes(x = PC1, y = PC2, color = Cluster), size = 2, alpha = 0.4) +
+   theme_minimal() +
+   theme(panel.grid.minor = element_blank()) +
+   labs(x = "PC1",
+        y = "PC2") +
+  labs(title = "UFO summary data PCs show three clusters",
+       subtitle = "Cluster 1: Large banana in center of plot\nCluster 2: Located at (-55,5)\nCluster 3: Located at (110,-65)")
+
+
+ggplot(pc.merged) +
+   geom_density(aes(x = Date...Time, fill = Cluster), alpha = 0.5) +
+   theme_minimal() +
+   theme(panel.grid.minor = element_blank()) +
+   labs(x = "Time-of-day",
+        y = "Density") 
+
+```
 ## Problem 3
 
 **Question**
@@ -109,139 +190,5 @@ library(R.utils)
 gunzip("file.gz", remove=FALSE)
 ```
 
-What can you conclude about the environment where the body of the for loop is interpreted by R?
-
 **Answer**
-
-Since the variable `test_value` is `100` when called outside of the loop, we can tell that the loop is operating in the global environment. If it were operating within its own, local scope then we would expect it to still be 10 in the global. 
-
-## Problem 4
-
-**Question**
-
-Write a snippet to test whether `while` loops follow the same rule.
-
-**Answer**
-```{r}
-test_value <- 10;
-i <- 1;
-
-while(i <= 100){
-    test_value <- i;
-    i <- i + 1;
-}
-test_value
-```
-Above, we see that `test_value` still returns `100`, showing that R applies the same scoping rules for `while` as it does with `for`. That is, assignments within `while` affect the global assignments. 
-## Problem 5
-
-**Question**
-
-The Fibbonoci Sequence:
-
-1, 1, 2, 3, 5, 8, 13, 21, 34, …
-
-Is produced by starting with the sequence 1, 1. The nth value is then defined as the sum of the 2 previous values.
-
-Write a function make_fib_counter which returns a function which gives successive fibonocci numbers upon repeated invocation.
-
-Eg, it should work like this:
-
-```{r, eval = FALSE}
-fc <- make_fib_counter();
-fc() # 1
-fc() # 1
-fc() # 2
-fc() # 3
-...  
-```
-
-
-
-
-**Answer**
-
-```{r, eval = TRUE}
-
-fc <- function(){
-# Make initial list if it doesnt exist
-  if(!exists("fib_list")){
-    fib_list <<- c(0,0,1) ;
-    i <<- 3 ;
-    return(fib_list[[i]])
-  }else{
-    fib_list[[i+1]] <<- sum(fib_list[c((i-2):i)]) ;
-    i <<- i + 1 ;
-    return(fib_list[[i]])
-  }
-}
-
-fc()
-fc() 
-fc() 
-fc() 
-fc()
-
-```
-
-## Problem 6 
-
-**Question**
-
-The sequence (1,1) constitutes the initial condition for the Fibbonoci sequence. That is to say that we can’t apply the rule “the next fibbonoci number is the sum of the previous two” without specifying at least two numbers to begin with. Write a second function that produces a function which counts up a sequence generated with an arbitrary initial condition.
-
-Something like this:
-```{bash, eval = FALSE}
-make_nocci <- function(c1, c2){
-    function(){
-        <fun part here>
-    }
-    }
-```
-
-**Answer**
-
-```{r, eval = TRUE}
-
-make_nocci <- function(c1 = 1, c2 = 1){
-# Make initial list if it doesnt exist
-  if(!exists("fib_list")){
-    fib_list <<- c(0, c1, c2) ;
-    i <<- 3 ;
-    return(fib_list[[i]])
-  }else{
-    fib_list[[i+1]] <<- sum(fib_list[c((i-2):i)]) ;
-    i <<- i + 1 ;
-    return(fib_list[[i]])
-  }
-}
-
-make_nocci(2,4)
-make_nocci()
-make_nocci()
-make_nocci()
-```
-
-
-## Problem 7
-
-**Question**
-Explain how the code in 6 works.
-
-
-**Answer**
-My solution opens with a conditional statement to initialize a list that should only be made in the first call of the function. If `fib_list` doesn't exist, then a list of `0, c1, c2` will be generated, with the later two terms able to be specified in the arguments. An index term `i` is specified to 3, which allows us to return the third position of `fib_list`, the current last term in the list.
-
-The next part adds together the two prior terms, adds them to the end of the list. Index `i` is updated and used to return the most recent custom Fibonoci number. All of these terms are specified with the `<<-` assigner so that they persist outside of the function environment. 
-
-## Problem 8 
-
-**Question**
-
-A key idea in our understanding of programming is environments, which in this context basically means “an object mapping a name to a thing”. We’ve encountered lots of environments before. List as many as you can think of.
-
-**Answer**
-
-In this section, we've covered local and global R environments, but we've also seen bash environments where variables can be called with a `$THING` command. 
-
 

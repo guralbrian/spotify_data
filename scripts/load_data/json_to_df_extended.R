@@ -4,8 +4,9 @@ lapply(libs, require, character.only = T)
 rm(libs)
 
 # List the person of interest
-#! could be made into a command arg
-person <- "Sarah_Lester"
+# Get commandArgs
+args <- commandArgs(trailingOnly = TRUE)
+person <-  as.character(args[1])
 
 # List json files
 files <- list.files(paste0("data_private/raw/individuals/", person, "/extended/MyData"), 

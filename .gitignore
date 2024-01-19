@@ -63,3 +63,11 @@ results/skeleton/
 
 # Non-raw data
 data/raw/brian_gural/extended_clean.csv
+
+# Libraries
+bin/*
+.TinyTeX/*
+deno/* 
+
+# Homework
+homework/*
