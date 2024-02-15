@@ -25,4 +25,5 @@ RUN R -e "install.packages(\"viridis\")"
 RUN R -e "install.packages(\"rjson\")"
 RUN R -e "install.packages(\"ggrepel\")"
 RUN R -e "install.packages(\"R.utils\")"
-
+RUN R -e "install.packages(\"shiny\")"
+RUN R -e "install.packages(\"gt\")"

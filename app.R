@@ -3,7 +3,7 @@ source('global.R', local = T)
 #### UI section ####
 ui <- fluidPage(
   
-  titlePanel("Malaria facility visualisation app"),
+  titlePanel("Top Spotify tracks & artists by time period"),
   
   sidebarLayout(
     sidebarPanel(
@@ -26,7 +26,8 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
  output$top_artists <- renderPlot(
-    plotArtists(data = df, date.range.1 = input$dateRange[1], date.range.2 = input$dateRange[2])
+    plotArtists(data = df, date.range.1 = input$dateRange[1], date.range.2 = input$dateRange[2]),
+    height = 600, width = 1000
   )
 }
 
