@@ -68,6 +68,7 @@ data/raw/brian_gural/extended_clean.csv
 bin/*
 .TinyTeX/*
 deno/* 
+.cache/*
 
 # Homework
 homeworks/*
