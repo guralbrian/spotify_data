@@ -55,3 +55,4 @@ df <- df |>
 
 # Save
 write.csv(df, paste0("/home/rstudio/data_private/raw/individuals/", person, "/extended/extended_clean.csv"), row.names = F)
+write.csv(df, paste0("/home/rstudio/data_private/raw/individuals/", person, "/shiny/extended_clean.csv"), row.names = F)

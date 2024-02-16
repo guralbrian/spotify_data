@@ -75,7 +75,8 @@ plotArtists <- function(data, date.range.1, date.range.2){
                                        colour ="black"),
       axis.title.y = element_blank()
     )
-  design <- "AB" 
+  design <- "A
+             B" 
   w.artist <- wrap_plots( 
     A = p.total.artist,  
     B = p.top.tracks, design = design)

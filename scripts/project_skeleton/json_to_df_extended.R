@@ -5,7 +5,7 @@ rm(libs)
 
 # List the person of interest
 #! could be made into a command arg
-person <- "brian_gural"
+person <- "Steve_Tufaro"
 
 # List json files
 files <- list.files(paste0("data_private/raw/individuals/", person, "/extended/MyData"), 
@@ -20,5 +20,5 @@ df <- files |>
   select(-ip_addr_decrypted)
 
 # Save the data for the first type
-write.csv(df, paste0("data/raw/", person, "/extended_raw.csv"), row.names = F)
+write.csv(df, paste0("data_private/raw/individuals/", person, "/extended/extended_raw.csv"), row.names = F)
 
